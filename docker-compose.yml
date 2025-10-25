@@ -13,3 +13,48 @@ services:
       LITELLM_LOG: info
     command: ["uvicorn", "litellm.proxy:app", "--host", "0.0.0.0", "--port", "4000"]
     restart: unless-stopped
+
+  dagster-daemon:
+    build:
+      context: .
+      dockerfile: Dockerfile.dagster
+    container_name: dagster-daemon
+    environment:
+      DAGSTER_HOME: /opt/dagster/dagster_home
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////opt/dagster/data/confradar.db}
+      CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./packages/confradar:/opt/dagster/app
+      - dagster_data:/opt/dagster/data
+      - dagster_home:/opt/dagster/dagster_home
+    command: ["dagster-daemon", "run"]
+    restart: unless-stopped
+    depends_on:
+      - litellm
+
+  dagster-webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.dagster
+    container_name: dagster-webserver
+    ports:
+      - "3000:3000"
+    environment:
+      DAGSTER_HOME: /opt/dagster/dagster_home
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////opt/dagster/data/confradar.db}
+      CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./packages/confradar:/opt/dagster/app
+      - dagster_data:/opt/dagster/data
+      - dagster_home:/opt/dagster/dagster_home
+    command: ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
+    restart: unless-stopped
+    depends_on:
+      - dagster-daemon
+      - litellm
+
+volumes:
+  dagster_data:
+  dagster_home:

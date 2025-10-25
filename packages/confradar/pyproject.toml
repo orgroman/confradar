@@ -27,6 +27,8 @@ dependencies = [
   "SQLAlchemy>=2.0",
   "scrapy>=2.11",
   "playwright>=1.40",
+  "dagster>=1.8",
+  "dagster-webserver>=1.8",
 ]
 
 [project.optional-dependencies]

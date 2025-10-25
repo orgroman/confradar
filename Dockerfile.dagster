@@ -1,0 +1,41 @@
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:$PATH"
+
+# Set working directory
+WORKDIR /opt/dagster/app
+
+# Copy project files
+COPY packages/confradar/pyproject.toml packages/confradar/uv.lock* ./
+
+# Install Python dependencies
+RUN uv sync --no-dev
+
+# Copy application code
+COPY packages/confradar/ ./
+
+# Set up Dagster home directory
+ENV DAGSTER_HOME=/opt/dagster/dagster_home
+RUN mkdir -p $DAGSTER_HOME
+
+# Copy Dagster configuration files
+COPY packages/confradar/workspace.yaml packages/confradar/dagster.yaml $DAGSTER_HOME/
+
+# Set Python path
+ENV PYTHONPATH=/opt/dagster/app/src:$PYTHONPATH
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD python -c "import confradar.dagster; print('OK')" || exit 1
+
+# The command will be specified in docker-compose.yml
