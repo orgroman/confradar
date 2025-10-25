@@ -95,13 +95,20 @@ ConfRadar automates the entire pipeline from discovery to presentation:
 
 ## Technology Stack
 
-- **Python tooling**: uv for fast dependency management and workspaces
-- **Monorepo**: uv workspace; main library under `packages/confradar`
-- **LLM access**: LiteLLM client and local proxy (OpenAI-compatible)
-- **Web Scraping**: BeautifulSoup, Playwright for dynamic pages
-- **Knowledge Base**: Graph database or structured store
-- **Integrations**: Notion API, Google Docs API
-- **Scheduling**: Cron or cloud functions for periodic runs
+- **Orchestration**: Dagster (asset-based pipeline with scheduling and monitoring)
+- **Web Scraping**: Scrapy (production-grade framework with 5 spiders)
+- **Database**: SQLAlchemy ORM with SQLite/PostgreSQL, Alembic migrations
+- **LLM Access**: LiteLLM client and local proxy (OpenAI-compatible)
+- **Package Management**: uv (fast Python dependency management and workspaces)
+- **Containers**: Docker Compose (LiteLLM proxy, Dagster daemon/webserver)
+- **Testing**: pytest with coverage tracking
+- **CI/CD**: GitHub Actions
+
+### Monorepo & uv workspace
+
+- Root acts as uv workspace aggregator; package lives in `packages/confradar`
+- Install deps: `uv sync --extra dev`
+- Run tests: `cd packages/confradar; uv run pytest -q`
 
 ### LLM via LiteLLM
 
@@ -110,11 +117,13 @@ ConfRadar automates the entire pipeline from discovery to presentation:
 - Override base URL via `LITELLM_BASE_URL`, `LLM_BASE_URL`, or `OPENAI_BASE_URL`
 - Tests mock LiteLLM; no real API calls are made during unit tests
 
-### Monorepo & uv workspace
+### Dagster Orchestration
 
-- Root acts as uv workspace aggregator; package lives in `packages/confradar`
-- Install deps: `uv sync --extra dev`
-- Run tests: `cd packages/confradar; uv run pytest -q`
+- **Daily Schedule**: Runs at 2 AM UTC to scrape all sources
+- **Web UI**: Monitor runs, view logs, materialize assets manually (http://localhost:3000)
+- **5 Scraper Assets**: One per source (AI Deadlines, ACL Web, Chairing Tool, ELRA, WikiCFP)
+- **1 Storage Asset**: Saves all conferences to database with deduplication
+- **Docker Services**: `dagster-daemon` (schedules) and `dagster-webserver` (UI)
 
 ## Project Timeline
 

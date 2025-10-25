@@ -8,6 +8,8 @@ Welcome to the **ConfRadar** documentation wiki! ConfRadar is an intelligent age
 - [Architecture](Architecture)
 - [Getting Started](Getting-Started)
 - [Development Guide](Development-Guide)
+- [Scraper Development](Scraper-Development)
+- [Dagster Orchestration](Dagster-Orchestration)
 - [Data Schema](Data-Schema)
 - [Roadmap](Roadmap)
 - [Contributing](Contributing)
@@ -47,33 +49,35 @@ ConfRadar solves a common problem for researchers: **staying on top of academic 
 ### Architecture Overview
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Web       │────▶│  LLM Agent   │────▶│  Knowledge  │
-│   Sources   │     │  (LangChain) │     │    Base     │
-└─────────────┘     └──────────────┘     └─────────────┘
-                            │                     │
-                            │                     │
-                            ▼                     ▼
-                    ┌──────────────┐     ┌─────────────┐
-                    │  Clustering  │     │   Change    │
-                    │   & Aliases  │     │  Detection  │
-                    └──────────────┘     └─────────────┘
-                            │                     │
-                            └──────────┬──────────┘
-                                       │
-                                       ▼
-                            ┌──────────────────┐
-                            │  Serving Layer   │
-                            │  (Notion/Docs)   │
-                            └──────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                         Dagster Orchestration                    │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   Scrapers   │→ │   Storage    │→ │  Extraction  │→  ...    │
+│  │   (Assets)   │  │   (Assets)   │  │   (Assets)   │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│         Daily Schedule (2 AM)  •  Web UI  •  Monitoring         │
+└─────────────────────────────────────────────────────────────────┘
+           ↓                    ↓                    ↓
+    ┌──────────┐         ┌──────────┐        ┌──────────┐
+    │   Web    │         │ Database │        │   LLM    │
+    │ Sources  │         │ (SQLite) │        │  (API)   │
+    └──────────┘         └──────────┘        └──────────┘
 ```
 
 ## Project Status
 
-**Current Phase**: Requirements & Design (M1)
+**Current Phase**: M2 - Data Source Integration & Web Crawling
 
-- Issues: 61 items across milestones M1–M7
-- Status: All items set to "Todo" and assigned to @orgroman
+**Recently Completed**:
+- ✅ Scrapy framework with 5 production spiders (AI Deadlines, ACL Web, Chairing Tool, ELRA, WikiCFP)
+- ✅ Dagster orchestration pipeline with daily scheduling
+- ✅ Database models with SQLAlchemy and Alembic migrations
+- ✅ Docker Compose setup with LiteLLM proxy and Dagster services
+
+**Active Development**:
+- M3: LLM-based information extraction
+- Data quality checks and monitoring
+- Notion/Google Docs integration planning
 
 See the [Roadmap](Roadmap) for detailed milestones and the [GitHub Project](https://github.com/users/orgroman/projects/6) for active tasks.
 

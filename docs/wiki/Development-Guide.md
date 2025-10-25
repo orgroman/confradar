@@ -59,3 +59,49 @@ uv run alembic upgrade head
 $env:DATABASE_URL = "postgresql+psycopg://user:pass@localhost:5432/confradar"
 uv run alembic upgrade head
 ```
+
+## Dagster Development
+
+### Running Dagster locally
+
+```powershell
+cd packages/confradar
+
+# Start webserver (UI on port 3000)
+uv run dagster-webserver
+
+# Start daemon (for schedules)
+uv run dagster-daemon run
+```
+
+### Testing Dagster assets
+
+```powershell
+# Run Dagster tests
+uv run pytest tests/test_dagster.py -v
+
+# Run with integration tests (requires network)
+uv run pytest tests/test_dagster.py -v -m integration
+```
+
+### Adding new scraper assets
+
+1. Create spider in `src/confradar/scrapers/spiders/`
+2. Add asset function in `src/confradar/dagster/assets/scrapers.py`
+3. Import and add to `Definitions` in `src/confradar/dagster/definitions.py`
+4. Add parameter to `store_conferences` in `src/confradar/dagster/assets/storage.py`
+5. Add test to verify asset exists
+
+See [Dagster Orchestration](Dagster-Orchestration) for detailed guide.
+
+### Materializing assets
+
+```powershell
+cd packages/confradar
+
+# Materialize all
+uv run dagster asset materialize --select '*'
+
+# Materialize specific asset
+uv run dagster asset materialize --select 'ai_deadlines_conferences'
+```
