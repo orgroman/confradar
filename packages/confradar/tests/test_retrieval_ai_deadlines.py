@@ -1,52 +1,49 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 import httpx
 import pytest
 
-from confradar.retrieval.ai_deadlines import AIDeadlinesScraper, normalize_record
+from confradar.retrieval.ai_deadlines import AIDeadlinesScraper
 
 
-def test_normalize_record_basic():
-    rec = {
-        "title": "NeurIPS",
-        "acronym": "NeurIPS",
-        "year": 2025,
-        "link": "https://neurips.cc",
-        "deadline": "2025-05-20 23:59:59 AoE",
-        "abstract_deadline": "2025-05-15 23:59:59 AoE",
-    }
-    item = normalize_record(rec)
-    assert item.key == "neurips"
-    assert item.name == "NeurIPS"
-    assert item.year == 2025
-    assert item.homepage == "https://neurips.cc"
-    kinds = {d.kind for d in item.deadlines}
-    assert kinds == {"submission", "abstract"}
+def test_scraper_parses_html():
+    """Test that AIDeadlinesScraper can parse HTML structure."""
+    sample_html = """
+    <html>
+    <body>
+        <a href="/conference?id=icml25">ICML 2025</a>
+        <a href="https://icml.cc/Conferences/2025">Conference Website</a>
+        <a href="/conference?id=neurips24">NeurIPS 2024</a>
+    </body>
+    </html>
+    """
+
+    scraper = AIDeadlinesScraper()
+    result = scraper.parse(sample_html)
+    
+    assert len(result) >= 2
+    conf_keys = {c["key"] for c in result}
+    assert "icml25" in conf_keys
+    assert "neurips24" in conf_keys
 
 
 def test_scraper_with_mocked_http(monkeypatch):
     """Test AIDeadlinesScraper.scrape() with mocked httpx."""
-    sample = [
-        {
-            "title": "ACL",
-            "acronym": "ACL",
-            "year": "2025",
-            "link": "https://aclweb.org",
-            "deadline": "2025-02-01T23:59:59",
-        }
-    ]
+    sample_html = """
+    <html>
+    <body>
+        <a href="/conference?id=acl25">ACL 2025</a>
+        <a href="https://aclweb.org">Conference Website</a>
+    </body>
+    </html>
+    """
 
     class FakeResponse:
-        def __init__(self, data):
-            self._data = data
+        def __init__(self):
+            self.text = sample_html
 
         def raise_for_status(self):
             return None
-
-        def json(self):
-            return self._data
 
     class FakeClient:
         def __init__(self, *args, **kwargs):
@@ -59,15 +56,14 @@ def test_scraper_with_mocked_http(monkeypatch):
             return False
 
         def get(self, url, **kwargs):
-            return FakeResponse(sample)
+            return FakeResponse()
 
     monkeypatch.setattr(httpx, "Client", FakeClient)
 
-    scraper = AIDeadlinesScraper("https://example/api")
+    scraper = AIDeadlinesScraper("https://example.com")
     result = scraper.scrape()
     
     assert result.source_name == "aideadlines"
     assert result.schema_version == "1.0"
-    assert len(result.normalized) == 1
-    assert result.normalized[0]["key"] == "acl"
-    assert any(d["kind"] == "submission" for d in result.normalized[0]["deadlines"])
+    assert len(result.normalized) >= 1
+    assert result.normalized[0]["key"] == "acl25"

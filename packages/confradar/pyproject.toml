@@ -57,6 +57,9 @@ lint.ignore = ["E203", "E266", "E501"]
 addopts = "-q --cov=confradar --cov-report=term-missing"
 # When running tests from the package directory
 testpaths = ["tests"]
+markers = [
+  "integration: marks tests that make real network calls (deselect with '-m \"not integration\"')"
+]
 
 [tool.uv]
 package = true

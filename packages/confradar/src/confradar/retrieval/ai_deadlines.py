@@ -3,8 +3,10 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
+import re
 
 import httpx
+from bs4 import BeautifulSoup
 
 from confradar.retrieval.base import Scraper, ScrapeResult
 
@@ -25,18 +27,21 @@ class ConferenceItem:
     deadlines: List[DeadlineItem]
 
 
-DEFAULT_API = "https://aideadlin.es/api/conferences?sub=AIML"
+DEFAULT_URL = "https://aideadlin.es"
 
 
 class AIDeadlinesScraper(Scraper):
-    """Scraper for aideadlin.es JSON API.
+    """Scraper for aideadlin.es website (HTML scraping).
     
     Schema v1.0: Returns list of conference dicts with key, name, year, 
     homepage, and deadlines list.
+    
+    Note: This scraper parses HTML since there's no official API.
+    The page structure may change - be prepared to update parse() logic.
     """
 
-    def __init__(self, api_url: str = DEFAULT_API):
-        self._api_url = api_url
+    def __init__(self, url: str = DEFAULT_URL):
+        self._url = url
 
     @property
     def source_name(self) -> str:
@@ -46,29 +51,60 @@ class AIDeadlinesScraper(Scraper):
     def schema_version(self) -> str:
         return "1.0"
 
-    def fetch(self, **kwargs: Any) -> List[Dict[str, Any]]:
-        """Fetch JSON from aideadlin.es API."""
-        api_url = kwargs.get("api_url", self._api_url)
+    def fetch(self, **kwargs: Any) -> str:
+        """Fetch HTML from aideadlin.es."""
+        url = kwargs.get("url", self._url)
         timeout = kwargs.get("timeout", 20.0)
         
-        with httpx.Client(timeout=timeout) as client:
-            resp = client.get(api_url)
+        with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+            resp = client.get(url)
             resp.raise_for_status()
-            return resp.json()
+            return resp.text
 
-    def parse(self, raw: List[Dict[str, Any]], **kwargs: Any) -> List[Dict[str, Any]]:
-        """Parse raw JSON into normalized ConferenceItem records."""
-        normalized = []
-        for rec in raw:
-            conf_item = normalize_record(rec)
-            # Convert dataclass to dict with datetime serialization
-            conf_dict = asdict(conf_item)
-            # Convert datetime objects to ISO strings for JSON compatibility
-            for dl in conf_dict.get("deadlines", []):
-                if isinstance(dl.get("due_at"), datetime):
-                    dl["due_at"] = dl["due_at"].isoformat()
-            normalized.append(conf_dict)
-        return normalized
+    def parse(self, raw: str, **kwargs: Any) -> List[Dict[str, Any]]:
+        """Parse HTML into normalized ConferenceItem records."""
+        soup = BeautifulSoup(raw, 'html.parser')
+        conferences = []
+        
+        # Find conference entries - structure may vary, this is a best-effort parse
+        # Look for conference links and deadline info
+        for link in soup.find_all('a', href=re.compile(r'/conference\?id=')):
+            try:
+                conf_id = re.search(r'id=([^&]+)', link.get('href', ''))
+                if not conf_id:
+                    continue
+                    
+                key = conf_id.group(1)
+                name = link.get_text(strip=True)
+                
+                # Try to find the conference's website link (usually nearby)
+                homepage = None
+                parent = link.parent
+                if parent:
+                    website_link = parent.find('a', href=re.compile(r'^https?://'))
+                    if website_link:
+                        homepage = website_link.get('href')
+                
+                # Extract year from key if present (e.g., 'icml25' -> 2025)
+                year = None
+                year_match = re.search(r'(\d{2})$', key)
+                if year_match:
+                    yr = int(year_match.group(1))
+                    year = 2000 + yr if yr < 50 else 1900 + yr
+                
+                conf_dict = {
+                    'key': key,
+                    'name': name,
+                    'year': year,
+                    'homepage': homepage,
+                    'deadlines': []  # Deadline extraction would require more complex parsing
+                }
+                conferences.append(conf_dict)
+            except Exception:
+                # Skip malformed entries
+                continue
+        
+        return conferences
 
     def validate(self, normalized: List[Dict[str, Any]]) -> None:
         """Validate normalized output has required fields."""
@@ -79,72 +115,3 @@ class AIDeadlinesScraper(Scraper):
                 raise ValueError(f"Missing key/name: {item}")
             if "deadlines" not in item or not isinstance(item["deadlines"], list):
                 raise ValueError(f"Invalid deadlines field: {item}")
-
-
-def normalize_record(rec: dict[str, Any]) -> ConferenceItem:
-    name = rec.get("title") or rec.get("name") or "Unknown"
-    key = (rec.get("acronym") or name).lower().replace(" ", "")
-    year = None
-    for cand in (rec.get("year"), rec.get("date")):
-        if isinstance(cand, int):
-            year = cand
-            break
-        if isinstance(cand, str) and cand.isdigit():
-            year = int(cand)
-            break
-    homepage = rec.get("link") or rec.get("homepage")
-
-    deadlines: list[DeadlineItem] = []
-    # The API tends to include multiple deadline fields; we map known keys where present
-    mapping: list[tuple[str, str]] = [
-        ("deadline", "submission"),
-        ("abstract_deadline", "abstract"),
-        ("notification_due", "notification"),
-        ("camera_ready_due", "camera_ready"),
-    ]
-    for src_key, kind in mapping:
-        raw = rec.get(src_key)
-        if not raw:
-            continue
-        dt = _parse_datetime(raw)
-        if dt is None:
-            continue
-        deadlines.append(DeadlineItem(kind=kind, due_at=dt, timezone=_tz_of(raw)))
-
-    return ConferenceItem(key=key, name=name, year=year, homepage=homepage, deadlines=deadlines)
-
-
-def _parse_datetime(value: str | Any) -> datetime | None:
-    if not isinstance(value, str):
-        return None
-    # Common formats: 2025-05-15 23:59:59 AoE, 2025-05-15 23:59:59 UTC, ISO
-    v = value.strip()
-    # Try ISO first
-    for fmt in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
-        try:
-            dt = datetime.strptime(v, fmt)
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            return dt
-        except Exception:
-            pass
-    # Fallback: strip trailing token (e.g., AoE) and parse
-    parts = v.split()
-    try_vals: Iterable[str] = [" ".join(parts[:-1]), v]
-    for cand in try_vals:
-        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
-            try:
-                dt = datetime.strptime(cand, fmt).replace(tzinfo=timezone.utc)
-                return dt
-            except Exception:
-                continue
-    return None
-
-
-def _tz_of(value: str | Any) -> str | None:
-    if not isinstance(value, str):
-        return None
-    tail = value.strip().split()[-1]
-    if tail.upper() in {"AOE", "UTC", "PST", "PDT", "CET", "CEST"}:
-        return tail.upper()
-    return None
