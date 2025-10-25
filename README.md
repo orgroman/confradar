@@ -39,9 +39,22 @@ cd packages/confradar
 uv run pytest -q
 cd ../..
 
-- Run CLI (examples)
 uv run confradar parse --text "Submission: Nov 15, 2025 (AoE)"
 uv run confradar fetch https://www.example.org/cfp
+
+### Database migrations (Alembic)
+
+Generate and apply migrations using Alembic. Default DB URL is `sqlite:///confradar.db`.
+
+```powershell
+# From repo root
+uv run alembic revision --autogenerate -m "change message"
+uv run alembic upgrade head
+
+# Override DB URL (e.g., PostgreSQL)
+$env:DATABASE_URL = "postgresql+psycopg://user:pass@localhost:5432/confradar"
+uv run alembic upgrade head
+```
 ```
 
 Notes:
