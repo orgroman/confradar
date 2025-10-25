@@ -1,7 +1,3 @@
-[tool.uv.workspace]
-members = [
-  "packages/*",
-]
 [build-system]
 requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -13,9 +9,7 @@ description = "AI-powered agent to track academic conference deadlines"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [
-  { name = "orgroman" }
-]
+authors = [ { name = "orgroman" } ]
 keywords = ["conferences", "deadlines", "scraping", "LLM", "NLP"]
 classifiers = [
   "Programming Language :: Python :: 3",
@@ -42,6 +36,8 @@ dev = [
 ]
 
 [project.scripts]
+# The CLI entrypoint lives in the library for reuse; the app will publish this script in releases
+# Keeping it here ensures local runs work even if the app isn't installed separately
 confradar = "confradar.cli:main"
 
 [tool.black]
@@ -56,6 +52,7 @@ lint.ignore = ["E203", "E266", "E501"]
 
 [tool.pytest.ini_options]
 addopts = "-q --cov=confradar --cov-report=term-missing"
+# When running tests from the package directory
 testpaths = ["tests"]
 
 [tool.uv]

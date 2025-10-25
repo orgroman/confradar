@@ -34,10 +34,10 @@ iwr -useb https://astral.sh/uv/install.ps1 | iex
 # Create venv and install deps (project + dev extras)
 uv sync --extra dev
 
-# Run tests
-uv run pytest
+# Run tests (from package directory)
+uv run -C packages/confradar pytest -q
 
-# Run CLI (examples)
+- Run CLI (examples)
 uv run confradar parse --text "Submission: Nov 15, 2025 (AoE)"
 uv run confradar fetch https://www.example.org/cfp
 ```
