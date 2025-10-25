@@ -95,12 +95,26 @@ ConfRadar automates the entire pipeline from discovery to presentation:
 
 ## Technology Stack
 
-- **Agent Framework**: LangChain for orchestration
-- **LLMs**: For parsing and extraction
+- **Python tooling**: uv for fast dependency management and workspaces
+- **Monorepo**: uv workspace; main library under `packages/confradar`
+- **LLM access**: LiteLLM client and local proxy (OpenAI-compatible)
 - **Web Scraping**: BeautifulSoup, Playwright for dynamic pages
 - **Knowledge Base**: Graph database or structured store
 - **Integrations**: Notion API, Google Docs API
 - **Scheduling**: Cron or cloud functions for periodic runs
+
+### LLM via LiteLLM
+
+- Default endpoint: `http://localhost:4000` (LiteLLM proxy via Docker Compose)
+- API key: `CONFRADAR_SA_OPENAI` (fallback `OPENAI_API_KEY`)
+- Override base URL via `LITELLM_BASE_URL`, `LLM_BASE_URL`, or `OPENAI_BASE_URL`
+- Tests mock LiteLLM; no real API calls are made during unit tests
+
+### Monorepo & uv workspace
+
+- Root acts as uv workspace aggregator; package lives in `packages/confradar`
+- Install deps: `uv sync --extra dev`
+- Run tests: `cd packages/confradar; uv run pytest -q`
 
 ## Project Timeline
 

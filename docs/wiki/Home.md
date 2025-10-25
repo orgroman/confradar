@@ -79,7 +79,40 @@ See the [Roadmap](Roadmap) for detailed milestones and the [GitHub Project](http
 
 ## Quick Start
 
-Setup and environment instructions will be documented as implementation progresses. For immediate context, see the repository [`README`](https://github.com/orgroman/confradar#readme) and the planning docs linked above.
+On Windows PowerShell using uv:
+
+```powershell
+# Install uv (one-time)
+iwr -useb https://astral.sh/uv/install.ps1 | iex
+
+# Install deps (project + dev extras)
+uv sync --extra dev
+
+# Run tests (from package directory)
+cd packages/confradar
+uv run pytest -q
+cd ../..
+
+# Try the CLI
+uv run confradar parse --text "Submission: Nov 15, 2025 (AoE)"
+```
+
+### LiteLLM proxy (recommended)
+
+Run a local LiteLLM proxy so ConfRadar talks to an OpenAI-compatible endpoint without vendor lock-in.
+
+```powershell
+# Set your key
+$env:CONFRADAR_SA_OPENAI = "<your-openai-key>"
+
+# Start proxy from repo root (http://localhost:4000)
+docker compose up -d
+
+# Optional: override base URL
+$env:LITELLM_BASE_URL = "http://localhost:4000"  # default
+```
+
+See the repository [`README`](https://github.com/orgroman/confradar#readme) for more details.
 
 ## Documentation Structure
 
