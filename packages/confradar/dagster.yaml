@@ -1,0 +1,52 @@
+# Dagster instance configuration
+# This file is placed in DAGSTER_HOME to configure the Dagster instance
+
+# Storage for run history, event logs, and schedules
+storage:
+  sqlite:
+    base_dir: /opt/dagster/dagster_home/storage
+
+# Run coordinator - manages parallel run execution
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+
+# Run launcher - how runs are executed
+run_launcher:
+  module: dagster.core.launcher
+  class: DefaultRunLauncher
+
+# Compute logs - where to store stdout/stderr
+compute_logs:
+  module: dagster.core.storage.local_compute_log_manager
+  class: LocalComputeLogManager
+  config:
+    base_dir: /opt/dagster/dagster_home/logs
+
+# Schedules
+scheduler:
+  module: dagster.core.scheduler
+  class: DagsterDaemonScheduler
+
+# Sensors
+sensors:
+  use_threads: true
+  num_workers: 4
+
+# Local artifact storage (for asset materializations)
+local_artifact_storage:
+  module: dagster.core.storage.root
+  class: LocalArtifactStorage
+  config:
+    base_dir: /opt/dagster/dagster_home/artifacts
+
+# Telemetry (optional, set to false to disable)
+telemetry:
+  enabled: false
+
+# Retention policy for run history
+retention:
+  schedule:
+    purge_after_days: 90
+  sensor:
+    purge_after_days: 90

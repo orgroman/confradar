@@ -29,3 +29,12 @@ class Settings(BaseSettings):
 
 
 settings = Settings()  # Loaded at import-time for convenience in small apps
+
+
+def get_settings() -> Settings:
+    """Get application settings.
+    
+    Returns:
+        Settings instance
+    """
+    return settings
