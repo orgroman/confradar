@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-proxy
+    ports:
+      - "4000:4000"
+    environment:
+      # Prefer the service account key if present, else fall back to OPENAI_API_KEY
+      OPENAI_API_KEY: ${CONFRADAR_SA_OPENAI:-${OPENAI_API_KEY:-}}
+      # Optional logging level: debug|info|warning|error
+      LITELLM_LOG: info
+    command: ["uvicorn", "litellm.proxy:app", "--host", "0.0.0.0", "--port", "4000"]
+    restart: unless-stopped

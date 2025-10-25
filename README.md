@@ -54,6 +54,33 @@ Repo scripts and ops:
 - Bootstrap GitHub artifacts: [`scripts/bootstrap_github.ps1`](scripts/bootstrap_github.ps1)
 - Update milestones in bulk: [`scripts/update_milestones.ps1`](scripts/update_milestones.ps1)
 
+## LiteLLM proxy (recommended)
+
+Run a local LiteLLM proxy so the app can talk to an OpenAI-compatible endpoint without hard-coding a vendor. The proxy listens on http://localhost:4000.
+
+1. Set your API key (service account preferred):
+
+```powershell
+$env:CONFRADAR_SA_OPENAI = "<your-openai-key>"
+# Alternatively: $env:OPENAI_API_KEY = "..."
+```
+
+2. Start the proxy with Docker Compose from the repo root:
+
+```powershell
+docker compose up -d
+```
+
+3. The app by default points to the proxy at http://localhost:4000. To override, set one of:
+
+```powershell
+$env:LITELLM_BASE_URL = "http://localhost:4000"  # default
+# or
+$env:LLM_BASE_URL = "https://api.openai.com/v1"
+# or
+$env:OPENAI_BASE_URL = "https://api.openai.com/v1"
+```
+
 ## Contributing
 
 Please file issues on the Project Board and use the label taxonomy (type:*, area:*, priority:Px).

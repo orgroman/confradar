@@ -12,7 +12,11 @@ class Settings(BaseSettings):
     # OpenAI
     # Prefer user-provided env var; fall back to standard name
     openai_api_key: str | None = Field(default=None, validation_alias=AliasChoices("CONFRADAR_SA_OPENAI", "OPENAI_API_KEY"))
-    openai_base_url: str = Field(default="https://api.openai.com/v1", alias="OPENAI_BASE_URL")
+    # Base URL for OpenAI-compatible API; prefer LiteLLM proxy if provided
+    openai_base_url: str = Field(
+        default="http://localhost:4000",
+        validation_alias=AliasChoices("LITELLM_BASE_URL", "LLM_BASE_URL", "OPENAI_BASE_URL"),
+    )
     openai_timeout_s: float = Field(default=20.0, alias="OPENAI_TIMEOUT_S")
     openai_max_retries: int = Field(default=3, alias="OPENAI_MAX_RETRIES")
 
