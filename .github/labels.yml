@@ -16,6 +16,9 @@
 - name: priority:P2
   color: fbca04
   description: Medium priority
+- name: priority:P3
+  color: cccccc
+  description: Low priority
 - name: type:bug
   color: d73a4a
   description: Something isn't working

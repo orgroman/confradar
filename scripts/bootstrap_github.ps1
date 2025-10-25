@@ -46,16 +46,17 @@ function Ensure-Project($owner, $title) {
 
 function Ensure-Milestones($owner, $repo, $milestoneNames) {
   if (-not $milestoneNames -or $milestoneNames.Count -eq 0) { return }
-  Write-Host "Ensuring milestones exist: $($milestoneNames -join ', ')"
+  Write-Host "Checking milestones: $($milestoneNames -join ', ')"
   $existingJson = gh api repos/$owner/$repo/milestones --paginate --silent 2>$null
   $existing = @()
   if ($LASTEXITCODE -eq 0 -and $existingJson) { $existing = $existingJson | ConvertFrom-Json }
   $existingTitles = @{}
   foreach ($m in $existing) { $existingTitles[$m.title] = $true }
   foreach ($name in $milestoneNames) {
-    if (-not $existingTitles.ContainsKey($name)) {
-      Write-Host "Creating milestone: $name"
-      # Create with open state; description optional
+    if ($existingTitles.ContainsKey($name)) {
+      Write-Host "  ✓ Milestone '$name' already exists"
+    } else {
+      Write-Host "  → Creating milestone: $name"
       gh api repos/$owner/$repo/milestones -X POST -f title="$name" | Out-Null
     }
   }
@@ -74,12 +75,19 @@ function Create-Issues-And-Add-To-Project($owner, $repo, $projectNumber, $csvPat
     if ($labels -ne "") { $args += @("-l", $labels) }
     if ($milestone -and $milestone -ne "") { $args += @("-m", $milestone) }
 
-    $out = gh @args --format json | ConvertFrom-Json
-    $issueUrl = $out.url
+    $outLines = gh @args 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      Write-Warning ("Failed to create issue '{0}': {1}" -f $title, ($outLines -join " "))
+      continue
+    }
+    $issueUrl = ($outLines | Select-Object -Last 1 |
+      ForEach-Object { ($_ | Select-String -Pattern 'https://github.com/\S+' -AllMatches).Matches.Value } |
+      Select-Object -First 1)
+    if (-not $issueUrl) { $issueUrl = ($outLines | Select-Object -Last 1) }
     Write-Host "Created issue: $issueUrl"
 
-    if ($projectNumber) {
-      gh project item-add --owner $owner --project $projectNumber --url $issueUrl | Out-Null
+    if ($projectNumber -and $issueUrl) {
+      gh project item-add $projectNumber --owner $owner --url $issueUrl | Out-Null
       Write-Host "  ↳ Added to project #$projectNumber"
     }
   }
@@ -98,7 +106,16 @@ try {
   Write-Host "Using project number: $projNum"
 
   # Ensure basic milestones used by backlog exist
-  Ensure-Milestones -owner $Owner -repo $Repo -milestoneNames @('M1','M2','M3','M4','M5')
+  $milestones = @(
+    'M1: Requirements & Design',
+    'M2: Data Source Integration & Web Crawling',
+    'M3: Information Extraction Pipeline',
+    'M4: Clustering & Alias Resolution',
+    'M5: Agent Integration & Orchestration',
+    'M6: Evaluation & Iteration',
+    'M7: Deployment & User-Facing Integration'
+  )
+  Ensure-Milestones -owner $Owner -repo $Repo -milestoneNames $milestones
 
   # Create issues from CSV and add to project
   Create-Issues-And-Add-To-Project -owner $Owner -repo $Repo -projectNumber $projNum -csvPath $BacklogPath
