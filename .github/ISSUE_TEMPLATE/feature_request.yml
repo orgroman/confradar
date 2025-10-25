@@ -1,0 +1,41 @@
+name: Feature request
+description: Suggest an idea or enhancement for ConfRadar
+title: "feat: <short summary>"
+labels: ["type:feature", "triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for your feature idea!"
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear and concise description of the problem to solve.
+      placeholder: e.g., Support Notion database sync
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Describe the solution you'd like, acceptance criteria, and any alternatives you've considered.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - area:retrieval
+        - area:extraction
+        - area:clustering
+        - area:kb
+        - area:serving
+        - area:infra
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: Backward compatible
+        - label: Adds new dependency
+        - label: Breaking change

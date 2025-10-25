@@ -1,0 +1,18 @@
+Title,Body,Labels,Milestone
+Seeded crawling for top CS conferences,"Implement retrieval starting with curated seeds (ACL, NeurIPS, ICML, ICLR, AAAI, EMNLP, CVPR, KDD). Schedule daily checks.","type:feature;area:retrieval;priority:P1",M1
+Search fallback for discovery,"Add web search fallback for unknown/new events with simple heuristics to pick CFP pages.","type:feature;area:retrieval;priority:P2",M1
+Define ConfRadar event schema,"Finalize schema (series_name, short_name, year, dates, location, links, last_updated).","type:task;area:kb;priority:P1",M1
+Extraction: rule-first parser,"Parse 'Important Dates' sections using rules; extract submission/abstract/notification.","type:feature;area:extraction;priority:P1",M1
+Extraction: LLM fallback for edge cases,"Use LLM prompt to extract dates when rules fail; ensure JSON schema output.","type:feature;area:extraction;priority:P1",M1
+Timezone/AoE handling,"Normalize and parse dates with time zones (including AoE).","type:task;area:extraction;priority:P1",M1
+Knowledge base storage,"Persist events with versioning metadata and last_updated timestamp.","type:feature;area:kb;priority:P1",M1
+Change detection for dates,"Detect and record changes to deadlines; surface 'extended' flag.","type:feature;area:kb;priority:P1",M1
+Alias normalization rules,"Normalize names (strip year, punctuation, known acronyms).","type:feature;area:clustering;priority:P2",M2
+Alias clustering via embeddings,"Cluster names via embeddings + threshold; evaluate on test aliases.","type:feature;area:clustering;priority:P2",M2
+Workshop → parent linkage,"Link workshops to main events via text cues and date/location overlap.","type:feature;area:clustering;priority:P2",M2
+Serving: Notion adapter,"Create Notion database schema and sync upsert for events.","type:feature;area:serving;priority:P1",M3
+Serving: Google Docs adapter,"Alternative output: table in Google Doc with idempotent updates.","type:feature;area:serving;priority:P2",M3
+Evaluation harness,"Prepare sample set and compute precision/recall, freshness latency, and cluster purity/ARI.","type:task;area:infra;priority:P2",M4
+Calendar export (.ics),"Export upcoming deadlines as an .ics calendar feed.","type:feature;area:serving;priority:P3",M5
+Dev workflow and CI basics,"Add lint/format/test scaffolding and pre-commit for consistency.","type:task;area:infra;priority:P2",M1
+Docs: Setup & architecture,"Document setup, architecture overview, and data schema details.","type:docs;area:infra;priority:P2",M1

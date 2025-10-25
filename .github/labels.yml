@@ -1,0 +1,48 @@
+- name: triage
+  color: d4c5f9
+  description: Needs initial review
+- name: good first issue
+  color: 7057ff
+  description: Good for newcomers
+- name: help wanted
+  color: 008672
+  description: Extra attention appreciated
+- name: priority:P0
+  color: b60205
+  description: Highest priority
+- name: priority:P1
+  color: d93f0b
+  description: High priority
+- name: priority:P2
+  color: fbca04
+  description: Medium priority
+- name: type:bug
+  color: d73a4a
+  description: Something isn't working
+- name: type:feature
+  color: a2eeef
+  description: New feature or enhancement
+- name: type:docs
+  color: 0075ca
+  description: Documentation-related
+- name: type:task
+  color: c2e0c6
+  description: Chore or refactor
+- name: area:retrieval
+  color: 1d76db
+  description: Crawling and discovery
+- name: area:extraction
+  color: 0e8a16
+  description: NLP/LLM extraction
+- name: area:clustering
+  color: 5319e7
+  description: Alias/workshop clustering
+- name: area:kb
+  color: 006b75
+  description: Knowledge base and change tracking
+- name: area:serving
+  color: c5def5
+  description: Notion/Docs/Calendar sync
+- name: area:infra
+  color: fef2c0
+  description: Tooling, CI, workflows
