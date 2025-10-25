@@ -7,24 +7,16 @@ from confradar.llm.openai import OpenAIClient
 
 
 def test_openai_success(monkeypatch):
-    # Fake OpenAI response object structure
-    fake_usage = SimpleNamespace(prompt_tokens=10, completion_tokens=6, total_tokens=16)
-    fake_choice = SimpleNamespace(message=SimpleNamespace(content="Hello world"))
-    fake_resp = SimpleNamespace(model="gpt-4o-mini", choices=[fake_choice], usage=fake_usage)
+    # Fake LiteLLM completion response shape (OpenAI-like)
+    fake_usage = {"prompt_tokens": 10, "completion_tokens": 6, "total_tokens": 16}
+    fake_choice = {"message": {"content": "Hello world"}}
+    fake_resp = {"model": "gpt-4o-mini", "choices": [fake_choice], "usage": fake_usage}
 
-    class FakeCompletions:
-        def create(self, **kwargs):
-            return fake_resp
+    def fake_completion(**kwargs):
+        return fake_resp
 
-    class FakeChat:
-        def __init__(self):
-            self.completions = FakeCompletions()
-
-    class FakeClient:
-        def __init__(self, *args, **kwargs):
-            self.chat = FakeChat()
-
-    monkeypatch.setattr("confradar.llm.openai.OpenAI", FakeClient)
+    # Patch completion used inside confradar.llm.openai
+    monkeypatch.setattr("confradar.llm.openai.completion", fake_completion, raising=False)
 
     client = OpenAIClient(api_key="test-key", base_url="https://api.openai.com/v1")
     res = client.generate("Say hi")
@@ -34,23 +26,13 @@ def test_openai_success(monkeypatch):
 
 
 def test_openai_retries_then_fails(monkeypatch):
-    class FakeCompletions:
-        def __init__(self):
-            self.calls = 0
+    calls = {"n": 0}
 
-        def create(self, **kwargs):
-            self.calls += 1
-            raise RuntimeError("server error")
+    def fake_completion(**kwargs):
+        calls["n"] += 1
+        raise RuntimeError("server error")
 
-    class FakeChat:
-        def __init__(self):
-            self.completions = FakeCompletions()
-
-    class FakeClient:
-        def __init__(self, *args, **kwargs):
-            self.chat = FakeChat()
-
-    monkeypatch.setattr("confradar.llm.openai.OpenAI", FakeClient)
+    monkeypatch.setattr("confradar.llm.openai.completion", fake_completion, raising=False)
 
     client = OpenAIClient(api_key="test-key", base_url="https://api.openai.com/v1")
     client.max_retries = 2
