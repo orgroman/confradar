@@ -6,7 +6,7 @@ from typing import List
 
 import httpx
 
-from confradar.extraction.date_extract import extract_dates_from_text
+from confradar.parsers.dates import extract_dates_from_text
 
 
 def _read_stdin() -> str:
