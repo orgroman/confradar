@@ -1,268 +1,459 @@
 # Scraper Development Guide
 
-This guide explains how to implement new data source scrapers for ConfRadar.
+This guide explains how to develop new scrapers for ConfRadar using Scrapy.
 
 ## Architecture Overview
 
-All scrapers inherit from the `Scraper` abstract base class and return `ScrapeResult` objects. This standardized interface enables:
-- **Schema versioning** for handling source changes over time
-- **Raw data preservation** for debugging and reprocessing
-- **Metadata capture** for timestamps, error context, and monitoring
-- **Dagster integration** where each scraper becomes a data asset
+ConfRadar uses **Scrapy** as the scraping framework, providing:
+- Built-in rate limiting and retries
+- HTTP caching for development
+- Item pipelines for validation and storage
+- Middleware system for customization
+- Robust error handling
 
-## The Scraper Interface
+## Project Structure
 
-```python
-from confradar.scrapers.base import Scraper, ScrapeResult
-
-class MySourceScraper(Scraper):
-    @property
-    def source_name(self) -> str:
-        """Unique identifier (e.g., 'aideadlines', 'wikicfp')"""
-        return "mysource"
-    
-    @property
-    def schema_version(self) -> str:
-        """Current schema version (e.g., '1.0', '2.1')"""
-        return "1.0"
-    
-    def fetch(self, **kwargs) -> Any:
-        """Fetch raw data from source (JSON, HTML, PDF, etc.)"""
-        # Return raw bytes, dict, or source-specific format
-        pass
-    
-    def parse(self, raw: Any, **kwargs) -> List[Dict[str, Any]]:
-        """Parse raw data into normalized conference records"""
-        # For LLM-based sources, call LLM here with structured output prompts
-        # Return list of dicts matching schema_version
-        pass
-    
-    def validate(self, normalized: List[Dict[str, Any]]) -> None:
-        """Validate normalized output (raises ValueError on failure)"""
-        for item in normalized:
-            if "key" not in item or "name" not in item:
-                raise ValueError(f"Missing required fields: {item}")
+```
+confradar/scrapers/
+├── settings.py          # Scrapy project settings
+├── items.py            # Item definitions (ConferenceItem)
+├── pipelines.py        # Validation, deduplication, DB storage
+└── spiders/            # Individual spiders
+    ├── ai_deadlines.py
+    ├── acl_web.py
+    ├── chairing_tool.py
+    └── ...
 ```
 
-The `scrape()` method orchestrates the pipeline: `fetch()` → `parse()` → `validate()` → wrap in `ScrapeResult`.
+## Creating a New Spider
 
-## Example: JSON API Scraper
-
-See `confradar/scrapers/ai_deadlines.py` for a complete example:
+### 1. Basic Spider Template
 
 ```python
-from confradar.scrapers.base import Scraper, ScrapeResult
-import httpx
+"""Spider for [source name]."""
+from datetime import datetime, timezone
+from typing import Iterator
+import re
 
-class AIDeadlinesScraper(Scraper):
-    DEFAULT_API = "https://aideadlin.es/api/conferences?sub=AIML"
+import scrapy
+from scrapy.http import Response
+
+from confradar.scrapers.items import ConferenceItem
+
+
+class MySourceSpider(scrapy.Spider):
+    """Scrape conferences from [source].
     
-    def __init__(self, api_url: str = DEFAULT_API):
-        self._api_url = api_url
+    Usage:
+        scrapy crawl my_source -o conferences.json
+    """
     
-    @property
-    def source_name(self) -> str:
-        return "aideadlines"
+    name = "my_source"
+    allowed_domains = ["example.com"]
+    start_urls = ["https://example.com/conferences"]
     
-    @property
-    def schema_version(self) -> str:
-        return "1.0"
+    custom_settings = {
+        "DOWNLOAD_DELAY": 2,  # Be respectful
+    }
     
-    def fetch(self, **kwargs) -> List[Dict]:
-        api_url = kwargs.get("api_url", self._api_url)
-        timeout = kwargs.get("timeout", 20.0)
+    def parse(self, response: Response) -> Iterator[ConferenceItem]:
+        """Parse the main page."""
+        self.logger.info(f"Parsing {response.url}")
         
-        with httpx.Client(timeout=timeout) as client:
-            resp = client.get(api_url)
-            resp.raise_for_status()
-            return resp.json()
-    
-    def parse(self, raw: List[Dict], **kwargs) -> List[Dict]:
-        return [normalize_record(rec) for rec in raw]
-    
-    def validate(self, normalized: List[Dict]) -> None:
-        for item in normalized:
-            if "key" not in item or "name" not in item:
-                raise ValueError(f"Missing key/name: {item}")
+        # Extract conference data using CSS or XPath selectors
+        for conf in response.css('.conference-item'):
+            yield ConferenceItem(
+                key=self._extract_key(conf),
+                name=conf.css('.name::text').get('').strip(),
+                year=self._extract_year(conf),
+                homepage=conf.css('a.website::attr(href)').get(),
+                deadlines=[],
+                source=self.name,
+                scraped_at=datetime.now(timezone.utc).isoformat(),
+                url=response.url,
+            )
 ```
 
-## Schema Versioning
+### 2. Working with Different HTML Structures
 
-When a source changes format:
+**CSS Selectors (Recommended for simple structures):**
+```python
+# Get text
+name = response.css('.conference-name::text').get()
 
-1. **Increment schema_version** (e.g., "1.0" → "1.1" for compatible changes, "2.0" for breaking changes)
-2. **Update parse() logic** to handle new format
-3. **Preserve old parsing** if supporting multiple versions:
+# Get attribute
+url = response.css('a.link::attr(href)').get()
+
+# Get all matching elements
+conferences = response.css('.conference-item')
+
+# Complex selector
+deadline = response.css('div.dates span.submission::text').get()
+```
+
+**XPath (For complex navigation):**
+```python
+# Find element by text content
+link = response.xpath('//a[contains(text(), "Conference")]/@href').get()
+
+# Navigate parent/sibling
+name = response.xpath('//div[@class="deadline"]/../h2/text()').get()
+
+# Multiple conditions
+items = response.xpath('//div[@class="item" and @data-type="conference"]')
+```
+
+### 3. Handling Pagination
 
 ```python
-def parse(self, raw: Any, **kwargs) -> List[Dict]:
-    # Detect format and route to appropriate parser
-    if self._is_v2_format(raw):
-        return self._parse_v2(raw)
-    return self._parse_v1(raw)
+def parse(self, response: Response) -> Iterator[ConferenceItem]:
+    # Extract items from current page
+    for item in self.parse_page(response):
+        yield item
+    
+    # Follow pagination link
+    next_page = response.css('a.next::attr(href)').get()
+    if next_page:
+        yield response.follow(next_page, callback=self.parse)
 ```
 
-Raw data is always preserved in `ScrapeResult.raw_data` for reprocessing with updated parsers.
+### 4. Following Links
 
-## LLM-Based Scrapers
+```python
+def parse(self, response: Response) -> Iterator[scrapy.Request]:
+    """Parse listing page, follow detail links."""
+    for link in response.css('.conference-link::attr(href)').getall():
+        yield response.follow(link, callback=self.parse_detail)
 
-For unstructured sources (PDFs, complex HTML, images), use the LLM in `parse()`:
+def parse_detail(self, response: Response) -> Iterator[ConferenceItem]:
+    """Parse individual conference page."""
+    yield ConferenceItem(
+        key=self._extract_key(response),
+        name=response.css('h1::text').get(),
+        # ... extract more details
+    )
+```
+
+### 5. Handling JavaScript-Heavy Sites
+
+For sites requiring JS execution, enable Playwright:
+
+```python
+class MyJSSpider(scrapy.Spider):
+    name = "my_js_source"
+    
+    custom_settings = {
+        "DOWNLOAD_HANDLERS": {
+            "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+            "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+        },
+    }
+    
+    def start_requests(self):
+        yield scrapy.Request(
+            url="https://example.com",
+            meta={"playwright": True, "playwright_include_page": True}
+        )
+```
+
+### 6. Using LLM for Structured Extraction
+
+For complex, unstructured sources:
 
 ```python
 from confradar.llm.openai import OpenAIClient
 
-class PDFConferenceScraper(Scraper):
-    def __init__(self):
+class LLMSpider(scrapy.Spider):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.llm = OpenAIClient()
     
-    def fetch(self, pdf_url: str, **kwargs) -> bytes:
-        # Download PDF
-        response = httpx.get(pdf_url)
-        return response.content
-    
-    def parse(self, raw: bytes, **kwargs) -> List[Dict]:
-        # Extract text, call LLM for structured output
-        text = extract_text_from_pdf(raw)
+    def parse(self, response: Response) -> Iterator[ConferenceItem]:
+        # Extract text content
+        text = ' '.join(response.css('body *::text').getall())
         
-        prompt = f"""Extract conference information:
+        # Use LLM to extract structured data
+        prompt = f"""Extract conference information from this text:
         - Conference name
         - Key deadlines (submission, notification, camera-ready)
         - Location and dates
         
-        Text: {text}
+        Text: {text[:2000]}
+        
+        Return JSON with keys: name, deadlines, location, dates
         """
         
-        response = self.llm.complete(prompt, response_format="json_object")
-        return [response.content]  # Parse JSON response
+        result = self.llm.complete(prompt, response_format="json_object")
+        # Parse and yield ConferenceItem
 ```
 
-## Vision-Based Scrapers
+## Item Pipelines
 
-For image-based sources (screenshots, infographics):
+Pipelines process scraped items in order. Current pipelines:
 
+### ValidationPipeline (Priority 100)
+Validates required fields (key, name, deadlines list).
+
+### DeduplicationPipeline (Priority 200)
+Removes duplicate conferences within a scraping session.
+
+### DatabasePipeline (Priority 300) - Future
+Stores conferences in database using SQLAlchemy models.
+
+**Custom Pipeline Example:**
 ```python
-def parse(self, raw: bytes, **kwargs) -> List[Dict]:
-    # Use vision-capable model
-    response = self.llm.complete(
-        prompt="Extract conference deadlines from this image",
-        images=[raw],
-        response_format="json_object"
-    )
-    return [response.content]
+class MyCustomPipeline:
+    def process_item(self, item, spider):
+        # Transform or validate item
+        item['name'] = item['name'].upper()
+        return item
+    
+    def open_spider(self, spider):
+        # Setup (e.g., open DB connection)
+        pass
+    
+    def close_spider(self, spider):
+        # Cleanup
+        pass
+```
+
+Enable in `settings.py`:
+```python
+ITEM_PIPELINES = {
+    'confradar.scrapers.pipelines.ValidationPipeline': 100,
+    'confradar.scrapers.pipelines.MyCustomPipeline': 150,
+    'confradar.scrapers.pipelines.DeduplicationPipeline': 200,
+}
 ```
 
 ## Testing Scrapers
 
-### Unit Tests (Mock HTTP)
+### Unit Tests (Mock Responses)
 
 ```python
-def test_scraper_with_mock(monkeypatch):
-    class FakeResponse:
-        def raise_for_status(self): pass
-        def json(self): return [{"title": "Test Conf"}]
+from scrapy.http import HtmlResponse, Request
+
+def test_spider_parse():
+    spider = MySourceSpider()
     
-    class FakeClient:
-        def __enter__(self): return self
-        def __exit__(self, *args): pass
-        def get(self, url, **kwargs): return FakeResponse()
+    # Create fake response
+    html = b"""<html>
+        <div class="conference">
+            <h2>ICML 2025</h2>
+        </div>
+    </html>"""
     
-    monkeypatch.setattr(httpx, "Client", FakeClient)
+    response = HtmlResponse(
+        url="https://example.com",
+        request=Request(url="https://example.com"),
+        body=html,
+    )
     
-    scraper = MySourceScraper()
-    result = scraper.scrape()
-    assert result.source_name == "mysource"
-    assert len(result.normalized) > 0
+    items = list(spider.parse(response))
+    assert len(items) > 0
+    assert items[0]['name'] == 'ICML 2025'
 ```
 
 ### Integration Tests (Real HTTP)
 
 ```python
+import pytest
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
+
 @pytest.mark.integration
-def test_scraper_real_http():
-    scraper = MySourceScraper()
-    result = scraper.scrape()
+def test_spider_real():
+    collected_items = []
     
-    # Verify structure
-    assert result.source_name == "mysource"
-    assert result.schema_version == "1.0"
-    assert isinstance(result.normalized, list)
-    assert result.raw_data is not None
+    def collect_item(item, response, spider):
+        collected_items.append(dict(item))
+    
+    settings = get_project_settings()
+    settings.set('HTTPCACHE_ENABLED', False)
+    
+    process = CrawlerProcess(settings)
+    
+    from scrapy import signals
+    from scrapy.signalmanager import dispatcher
+    dispatcher.connect(collect_item, signal=signals.item_scraped)
+    
+    process.crawl(MySourceSpider)
+    process.start()
+    
+    assert len(collected_items) > 0
+    print(f"✓ Scraped {len(collected_items)} conferences")
 ```
 
-Run integration tests separately: `uv run pytest -m integration`
+Run integration tests:
+```bash
+uv run pytest -m integration -v
+```
+
+## Running Spiders
+
+### Command Line
+
+```bash
+# Basic scraping
+scrapy crawl ai_deadlines
+
+# Output to JSON
+scrapy crawl ai_deadlines -o conferences.json
+
+# Output to CSV
+scrapy crawl ai_deadlines -o conferences.csv
+
+# Multiple spiders
+scrapy crawl ai_deadlines -o ai.json
+scrapy crawl acl_web -o acl.json
+```
+
+### From Python
+
+```python
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
+from confradar.scrapers.spiders.ai_deadlines import AIDeadlinesSpider
+
+settings = get_project_settings()
+process = CrawlerProcess(settings)
+process.crawl(AIDeadlinesSpider)
+process.start()  # Blocks until finished
+```
 
 ## Dagster Integration
 
-Each scraper becomes a Dagster asset:
+Each spider becomes a Dagster asset:
 
 ```python
 from dagster import asset
-from confradar.scrapers.ai_deadlines import AIDeadlinesScraper
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
 
 @asset
-def ai_deadlines_conferences() -> List[Dict]:
-    """Fetch conferences from AI Deadlines."""
-    scraper = AIDeadlinesScraper()
-    result = scraper.scrape()
-    return result.normalized
-
-@asset
-def wikicfp_conferences() -> List[Dict]:
-    """Fetch conferences from WikiCFP."""
-    scraper = WikiCFPScraper()
-    result = scraper.scrape()
-    return result.normalized
+def ai_deadlines_conferences() -> list[dict]:
+    """Scrape AI Deadlines conferences."""
+    collected = []
+    
+    def collect_item(item, response, spider):
+        collected.append(dict(item))
+    
+    settings = get_project_settings()
+    process = CrawlerProcess(settings)
+    
+    from scrapy import signals
+    from scrapy.signalmanager import dispatcher
+    dispatcher.connect(collect_item, signal=signals.item_scraped)
+    
+    process.crawl('ai_deadlines')  # Spider name
+    process.start()
+    
+    return collected
 
 @asset
 def merged_conferences(
-    ai_deadlines_conferences: List[Dict],
-    wikicfp_conferences: List[Dict]
-) -> None:
+    ai_deadlines_conferences: list[dict],
+    acl_web_conferences: list[dict],
+) -> list[dict]:
     """Merge and deduplicate conferences from multiple sources."""
-    all_confs = ai_deadlines_conferences + wikicfp_conferences
-    # Dedupe logic, write to DB
+    all_confs = ai_deadlines_conferences + acl_web_conferences
+    # Dedupe by (name, year) tuple
+    seen = set()
+    unique = []
+    for conf in all_confs:
+        key = (conf['name'], conf.get('year'))
+        if key not in seen:
+            seen.add(key)
+            unique.append(conf)
+    return unique
 ```
 
-## Error Handling
+## Best Practices
 
-Scrapers should raise exceptions for failures:
-- **Network errors**: Let httpx raise (Dagster will retry)
-- **Parsing errors**: Raise `ValueError` with details
-- **Validation errors**: Raise `ValueError` in `validate()`
+### 1. Be Respectful
+- Use appropriate `DOWNLOAD_DELAY` (1-3 seconds)
+- Respect `robots.txt` (enabled by default)
+- Enable `AUTOTHROTTLE` for adaptive delays
+- Use HTTP caching during development
 
+### 2. Handle Errors Gracefully
 ```python
-def parse(self, raw: Any, **kwargs) -> List[Dict]:
-    if not isinstance(raw, list):
-        raise ValueError(f"Expected list, got {type(raw)}")
-    
+def parse(self, response: Response):
     try:
-        return [normalize_record(rec) for rec in raw]
+        name = response.css('.name::text').get()
+        if not name:
+            self.logger.warning(f"No name found at {response.url}")
+            return
+        
+        yield ConferenceItem(name=name, ...)
     except Exception as e:
-        raise ValueError(f"Parse failed: {e}") from e
+        self.logger.error(f"Failed to parse {response.url}: {e}")
 ```
 
-## Metadata Best Practices
-
-Include useful metadata in your scraper:
-
+### 3. Log Useful Information
 ```python
-def scrape(self, **kwargs) -> ScrapeResult:
-    result = super().scrape(**kwargs)
-    result.metadata.update({
-        "record_count": len(result.normalized),
-        "source_url": self._api_url,
-        "rate_limit_remaining": response.headers.get("X-RateLimit-Remaining"),
-        "content_hash": hashlib.sha256(str(result.raw_data).encode()).hexdigest(),
-    })
-    return result
+self.logger.info(f"Found {len(items)} conferences")
+self.logger.warning(f"Missing deadline for {conf_name}")
+self.logger.error(f"Failed to parse date: {date_str}")
 ```
+
+### 4. Make Extractors Reusable
+```python
+class MySpider(scrapy.Spider):
+    def _extract_year(self, text: str) -> int | None:
+        """Extract 4-digit year from text."""
+        match = re.search(r'\b(20\d{2})\b', text)
+        return int(match.group(1)) if match else None
+    
+    def _extract_key(self, name: str, year: int | None) -> str:
+        """Generate conference key from name and year."""
+        slug = re.sub(r'[^a-z0-9]+', '', name.lower())
+        if year:
+            slug += str(year)[-2:]  # Last 2 digits
+        return slug
+```
+
+## Debugging Tips
+
+### 1. Scrapy Shell
+```bash
+scrapy shell "https://example.com"
+```
+
+Then interactively test selectors:
+```python
+>>> response.css('.conference-name::text').getall()
+>>> response.xpath('//div[@class="item"]').getall()
+```
+
+### 2. Enable Debug Logging
+```python
+custom_settings = {
+    'LOG_LEVEL': 'DEBUG',
+}
+```
+
+### 3. Save Response for Analysis
+```python
+def parse(self, response):
+    # Save HTML for inspection
+    with open('debug.html', 'wb') as f:
+        f.write(response.body)
+```
+
+## Example Spiders
+
+See existing spiders in `src/confradar/scrapers/spiders/`:
+- `ai_deadlines.py` - HTML scraping with CSS selectors
+- `acl_web.py` - Table parsing
+- `chairing_tool.py` - Complex navigation
+- `elra.py` - Multi-page scraping
 
 ## Next Steps
 
-1. **Implement your scraper** following the examples
-2. **Add unit tests** with mocked HTTP
+1. **Create your spider** following the template
+2. **Add unit tests** with mocked responses
 3. **Add integration test** (mark with `@pytest.mark.integration`)
-4. **Document source-specific quirks** in scraper docstring
-5. **Create Dagster asset** once scraper is stable
+4. **Test locally**: `scrapy crawl your_spider`
+5. **Create Dagster asset** once spider is stable
 
-See existing scrapers in `packages/confradar/src/confradar/scrapers/` for reference.

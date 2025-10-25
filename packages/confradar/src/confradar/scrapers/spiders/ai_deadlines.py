@@ -1,4 +1,4 @@
-"""Spider for aideadlin.es website."""
+"""Spider for aideadlines.org website."""
 from datetime import datetime, timezone
 from typing import Any, Iterator
 import re
@@ -10,19 +10,20 @@ from confradar.scrapers.items import ConferenceItem
 
 
 class AIDeadlinesSpider(scrapy.Spider):
-    """Scrape conference deadlines from aideadlin.es.
+    """Scrape conference deadlines from aideadlines.org (NLP focus).
     
-    This spider parses the HTML structure of aideadlin.es to extract
-    conference information. The site structure may change, requiring
-    updates to the parsing logic.
+    Source: https://aideadlines.org/?sub=NLP
+    
+    This spider parses the HTML structure to extract conference information.
+    The site structure may change, requiring updates to the parsing logic.
     
     Usage:
         scrapy crawl ai_deadlines -o conferences.json
     """
     
     name = "ai_deadlines"
-    allowed_domains = ["aideadlin.es"]
-    start_urls = ["https://aideadlin.es"]
+    allowed_domains = ["aideadlines.org"]
+    start_urls = ["https://aideadlines.org/?sub=NLP"]
     
     custom_settings = {
         # Override default delay for this specific spider
