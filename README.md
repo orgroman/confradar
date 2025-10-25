@@ -35,7 +35,9 @@ iwr -useb https://astral.sh/uv/install.ps1 | iex
 uv sync --extra dev
 
 # Run tests (from package directory)
-uv run -C packages/confradar pytest -q
+cd packages/confradar
+uv run pytest -q
+cd ../..
 
 - Run CLI (examples)
 uv run confradar parse --text "Submission: Nov 15, 2025 (AoE)"
