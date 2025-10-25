@@ -17,6 +17,8 @@ class Settings(BaseSettings):
         default="http://localhost:4000",
         validation_alias=AliasChoices("LITELLM_BASE_URL", "LLM_BASE_URL", "OPENAI_BASE_URL"),
     )
+    # Database connection URL; default to local SQLite file
+    database_url: str = Field(default="sqlite:///confradar.db", alias="DATABASE_URL")
     openai_timeout_s: float = Field(default=20.0, alias="OPENAI_TIMEOUT_S")
     openai_max_retries: int = Field(default=3, alias="OPENAI_MAX_RETRIES")
 

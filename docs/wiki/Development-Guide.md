@@ -43,3 +43,19 @@ GitHub Actions runs uv sync and tests on Windows and Ubuntu for pull requests.
 - Keep public APIs stable; add tests when changing behavior
 - Prefer provider-agnostic LLM usage via LiteLLM (client or proxy)
 - No real LLM calls in unit tests; mock LiteLLM
+
+## Database migrations (Alembic)
+
+We use Alembic for schema migrations.
+
+```powershell
+# Generate a new migration (autogenerate from models)
+uv run alembic revision --autogenerate -m "<message>"
+
+# Apply migrations
+uv run alembic upgrade head
+
+# Point to a different DB
+$env:DATABASE_URL = "postgresql+psycopg://user:pass@localhost:5432/confradar"
+uv run alembic upgrade head
+```
