@@ -28,7 +28,7 @@ services:
       - ./packages/confradar:/opt/dagster/app
       - dagster_data:/opt/dagster/data
       - dagster_home:/opt/dagster/dagster_home
-    command: ["dagster-daemon", "run"]
+    command: ["uv", "run", "dagster-daemon", "run"]
     restart: unless-stopped
     depends_on:
       - litellm
@@ -49,7 +49,7 @@ services:
       - ./packages/confradar:/opt/dagster/app
       - dagster_data:/opt/dagster/data
       - dagster_home:/opt/dagster/dagster_home
-    command: ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
+    command: ["uv", "run", "dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
     restart: unless-stopped
     depends_on:
       - dagster-daemon
