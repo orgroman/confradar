@@ -32,7 +32,7 @@ class Scraper(ABC):
     
     Each source (AI Deadlines, WikiCFP, PDFs, etc.) implements this interface.
     Supports:
-    - Airflow integration (each scraper = task returning ScrapeResult)
+    - Dagster integration (each scraper = asset returning ScrapeResult)
     - LLM-based extraction (override parse with LLM calls)
     - Schema evolution (raw data preserved; normalized output versioned)
     - Robust error handling (network, parsing, schema drift)
@@ -90,7 +90,7 @@ class Scraper(ABC):
     def scrape(self, **kwargs: Any) -> ScrapeResult:
         """Execute full scrape pipeline: fetch -> parse -> validate -> wrap result.
         
-        This is the main entry point for Airflow tasks.
+        This is the main entry point for Dagster assets.
         """
         scraped_at = datetime.now(timezone.utc)
         raw = self.fetch(**kwargs)

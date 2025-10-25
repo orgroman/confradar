@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import httpx
 import pytest
 
-from confradar.retrieval.ai_deadlines import fetch_ai_deadlines, normalize_record
+from confradar.retrieval.ai_deadlines import AIDeadlinesScraper, normalize_record
 
 
 def test_normalize_record_basic():
@@ -26,7 +26,8 @@ def test_normalize_record_basic():
     assert kinds == {"submission", "abstract"}
 
 
-def test_fetch_ai_deadlines_mocks_http(monkeypatch):
+def test_scraper_with_mocked_http(monkeypatch):
+    """Test AIDeadlinesScraper.scrape() with mocked httpx."""
     sample = [
         {
             "title": "ACL",
@@ -57,13 +58,16 @@ def test_fetch_ai_deadlines_mocks_http(monkeypatch):
         def __exit__(self, exc_type, exc, tb):
             return False
 
-        def get(self, url):
+        def get(self, url, **kwargs):
             return FakeResponse(sample)
 
     monkeypatch.setattr(httpx, "Client", FakeClient)
 
-    items = fetch_ai_deadlines("https://example/api")
-    assert len(items) == 1
-    it = items[0]
-    assert it.key == "acl"
-    assert any(d.kind == "submission" for d in it.deadlines)
+    scraper = AIDeadlinesScraper("https://example/api")
+    result = scraper.scrape()
+    
+    assert result.source_name == "aideadlines"
+    assert result.schema_version == "1.0"
+    assert len(result.normalized) == 1
+    assert result.normalized[0]["key"] == "acl"
+    assert any(d["kind"] == "submission" for d in result.normalized[0]["deadlines"])

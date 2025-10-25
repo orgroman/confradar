@@ -81,38 +81,6 @@ class AIDeadlinesScraper(Scraper):
                 raise ValueError(f"Invalid deadlines field: {item}")
 
 
-def fetch_ai_deadlines(api_url: str = DEFAULT_API, *, timeout: float = 20.0) -> list[ConferenceItem]:
-    """Fetch and normalize AI Deadlines data (legacy function).
-    
-    This function maintains backward compatibility with existing code.
-    For new code, prefer using AIDeadlinesScraper class directly.
-    
-    This expects an Open API returning JSON list of conferences. Tests mock httpx to avoid
-    real network calls. The schema is normalized to ConferenceItem/DeadlineItem.
-    """
-    scraper = AIDeadlinesScraper(api_url=api_url)
-    result = scraper.scrape(timeout=timeout)
-    # Convert dicts back to dataclasses for backward compatibility
-    conferences = []
-    for item in result.normalized:
-        deadlines = [
-            DeadlineItem(
-                kind=dl["kind"],
-                due_at=datetime.fromisoformat(dl["due_at"]) if isinstance(dl["due_at"], str) else dl["due_at"],
-                timezone=dl.get("timezone")
-            )
-            for dl in item["deadlines"]
-        ]
-        conferences.append(ConferenceItem(
-            key=item["key"],
-            name=item["name"],
-            year=item.get("year"),
-            homepage=item.get("homepage"),
-            deadlines=deadlines
-        ))
-    return conferences
-
-
 def normalize_record(rec: dict[str, Any]) -> ConferenceItem:
     name = rec.get("title") or rec.get("name") or "Unknown"
     key = (rec.get("acronym") or name).lower().replace(" ", "")
