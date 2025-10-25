@@ -16,8 +16,8 @@ catch {
     exit 1
 }
 
-Write-Host "Syncing dependencies (including dev group) via uv..."
-uv sync --all-groups
+Write-Host "Syncing dependencies (including dev extras) via uv..."
+uv sync --extra dev
 
 Write-Host "Done. Example commands:" -ForegroundColor Green
 Write-Host "  uv run pytest"

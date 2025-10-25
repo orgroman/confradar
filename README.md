@@ -31,8 +31,8 @@ On Windows PowerShell:
 # Install uv (one-time)
 iwr -useb https://astral.sh/uv/install.ps1 | iex
 
-# Create venv and install deps (project + dev group)
-uv sync --all-groups
+# Create venv and install deps (project + dev extras)
+uv sync --extra dev
 
 # Run tests
 uv run pytest
