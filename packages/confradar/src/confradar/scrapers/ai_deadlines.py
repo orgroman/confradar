@@ -8,7 +8,7 @@ import re
 import httpx
 from bs4 import BeautifulSoup
 
-from confradar.retrieval.base import Scraper, ScrapeResult
+from confradar.scrapers.base import Scraper, ScrapeResult
 
 
 @dataclass

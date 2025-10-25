@@ -1,4 +1,4 @@
-from confradar.extraction.date_extract import extract_dates_from_text
+from confradar.parsers.dates import extract_dates_from_text
 
 
 def test_extract_simple_month_name_date():

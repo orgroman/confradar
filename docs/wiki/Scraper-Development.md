@@ -13,7 +13,7 @@ All scrapers inherit from the `Scraper` abstract base class and return `ScrapeRe
 ## The Scraper Interface
 
 ```python
-from confradar.retrieval.base import Scraper, ScrapeResult
+from confradar.scrapers.base import Scraper, ScrapeResult
 
 class MySourceScraper(Scraper):
     @property
@@ -48,10 +48,10 @@ The `scrape()` method orchestrates the pipeline: `fetch()` → `parse()` → `va
 
 ## Example: JSON API Scraper
 
-See `confradar/retrieval/ai_deadlines.py` for a complete example:
+See `confradar/scrapers/ai_deadlines.py` for a complete example:
 
 ```python
-from confradar.retrieval.base import Scraper, ScrapeResult
+from confradar.scrapers.base import Scraper, ScrapeResult
 import httpx
 
 class AIDeadlinesScraper(Scraper):
@@ -197,7 +197,7 @@ Each scraper becomes a Dagster asset:
 
 ```python
 from dagster import asset
-from confradar.retrieval.ai_deadlines import AIDeadlinesScraper
+from confradar.scrapers.ai_deadlines import AIDeadlinesScraper
 
 @asset
 def ai_deadlines_conferences() -> List[Dict]:
@@ -265,4 +265,4 @@ def scrape(self, **kwargs) -> ScrapeResult:
 4. **Document source-specific quirks** in scraper docstring
 5. **Create Dagster asset** once scraper is stable
 
-See existing scrapers in `packages/confradar/src/confradar/retrieval/` for reference.
+See existing scrapers in `packages/confradar/src/confradar/scrapers/` for reference.

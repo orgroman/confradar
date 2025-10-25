@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from confradar.retrieval.ai_deadlines import AIDeadlinesScraper
+from confradar.scrapers.ai_deadlines import AIDeadlinesScraper
 
 
 @pytest.mark.integration

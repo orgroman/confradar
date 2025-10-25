@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from confradar.retrieval.ai_deadlines import AIDeadlinesScraper
+from confradar.scrapers.ai_deadlines import AIDeadlinesScraper
 
 
 def test_scraper_parses_html():

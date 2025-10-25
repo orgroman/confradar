@@ -25,6 +25,8 @@ dependencies = [
   "pydantic-settings>=2.3",
   "litellm>=1.43.0",
   "SQLAlchemy>=2.0",
+  "scrapy>=2.11",
+  "playwright>=1.40",
 ]
 
 [project.optional-dependencies]
