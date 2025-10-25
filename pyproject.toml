@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "confradar"
+version = "0.1.0"
+description = "AI-powered agent to track academic conference deadlines"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "orgroman" }
+]
+keywords = ["conferences", "deadlines", "scraping", "LLM", "NLP"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent"
+]
+dependencies = [
+  "beautifulsoup4>=4.12",
+  "dateparser>=1.2",
+  "httpx>=0.27",
+  "pydantic>=2.6",
+  "SQLAlchemy>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "black>=24.3",
+  "ruff>=0.6",
+  "mypy>=1.10",
+  "pytest>=8.2",
+  "pytest-cov>=5.0",
+  "pre-commit>=3.7",
+]
+
+[project.scripts]
+confradar = "confradar.cli:main"
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+lint.select = ["E", "F", "I", "UP", "B"]
+lint.ignore = ["E203", "E266", "E501"]
+
+[tool.pytest.ini_options]
+addopts = "-q --cov=confradar --cov-report=term-missing"
+testpaths = ["tests"]
+
+[tool.uv]
+package = true
+
+[tool.uv.dependency-groups]
+dev = [
+  "black>=24.3",
+  "ruff>=0.6",
+  "mypy>=1.10",
+  "pytest>=8.2",
+  "pytest-cov>=5.0",
+  "pre-commit>=3.7",
+]
