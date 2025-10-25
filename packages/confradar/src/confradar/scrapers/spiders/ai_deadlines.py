@@ -1,0 +1,114 @@
+"""Spider for aideadlin.es website."""
+from datetime import datetime, timezone
+from typing import Any, Iterator
+import re
+
+import scrapy
+from scrapy.http import Response
+
+from confradar.scrapers.items import ConferenceItem
+
+
+class AIDeadlinesSpider(scrapy.Spider):
+    """Scrape conference deadlines from aideadlin.es.
+    
+    This spider parses the HTML structure of aideadlin.es to extract
+    conference information. The site structure may change, requiring
+    updates to the parsing logic.
+    
+    Usage:
+        scrapy crawl ai_deadlines -o conferences.json
+    """
+    
+    name = "ai_deadlines"
+    allowed_domains = ["aideadlin.es"]
+    start_urls = ["https://aideadlin.es"]
+    
+    custom_settings = {
+        # Override default delay for this specific spider
+        "DOWNLOAD_DELAY": 2,
+    }
+    
+    def parse(self, response: Response) -> Iterator[ConferenceItem]:
+        """Parse the main page and extract conference information.
+        
+        Args:
+            response: Scrapy response object
+            
+        Yields:
+            ConferenceItem objects
+        """
+        self.logger.info(f"Parsing {response.url}")
+        
+        # Find all conference links
+        conference_links = response.css('a[href*="/conference?id="]')
+        
+        for link in conference_links:
+            try:
+                # Extract conference ID from link
+                href = link.attrib.get('href', '')
+                conf_match = re.search(r'id=([^&]+)', href)
+                if not conf_match:
+                    continue
+                
+                key = conf_match.group(1)
+                name = link.css('::text').get('').strip()
+                
+                if not name:
+                    continue
+                
+                # Extract year from key if present (e.g., 'icml25' -> 2025)
+                year = self._extract_year(key)
+                
+                # Try to find homepage link nearby
+                homepage = self._find_homepage(link)
+                
+                item = ConferenceItem(
+                    key=key,
+                    name=name,
+                    year=year,
+                    homepage=homepage,
+                    deadlines=[],  # TODO: Extract deadline info from page
+                    source="aideadlines",
+                    scraped_at=datetime.now(timezone.utc).isoformat(),
+                    url=response.url,
+                )
+                
+                yield item
+                
+            except Exception as e:
+                self.logger.warning(f"Failed to parse conference link: {e}")
+                continue
+    
+    def _extract_year(self, key: str) -> int | None:
+        """Extract year from conference key.
+        
+        Args:
+            key: Conference key like 'icml25'
+            
+        Returns:
+            Year as integer, or None if not found
+        """
+        year_match = re.search(r'(\d{2})$', key)
+        if year_match:
+            yr = int(year_match.group(1))
+            # Assume 00-49 is 2000-2049, 50-99 is 1950-1999
+            return 2000 + yr if yr < 50 else 1900 + yr
+        return None
+    
+    def _find_homepage(self, link_selector: Any) -> str | None:
+        """Find the homepage URL near the conference link.
+        
+        Args:
+            link_selector: Scrapy selector for the conference link
+            
+        Returns:
+            Homepage URL or None
+        """
+        # Try to find a nearby external link (conference website)
+        parent = link_selector.xpath('..')
+        if parent:
+            website_link = parent.xpath('.//a[starts-with(@href, "http")]/@href').get()
+            if website_link and 'aideadlin.es' not in website_link:
+                return website_link
+        return None

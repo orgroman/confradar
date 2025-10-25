@@ -6,45 +6,79 @@ Skip with: uv run pytest -m "not integration"
 from __future__ import annotations
 
 import pytest
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
 
-from confradar.scrapers.ai_deadlines import AIDeadlinesScraper
+from confradar.scrapers.spiders.ai_deadlines import AIDeadlinesSpider
 
 
 @pytest.mark.integration
-def test_ai_deadlines_scraper_real():
-    """Test AIDeadlinesScraper against live website.
+def test_ai_deadlines_spider_real():
+    """Test AIDeadlinesSpider against live website using Scrapy.
     
     Note: This scrapes HTML, not an API. The site structure may change,
-    causing this test to fail. That's expected - update parse() logic when it happens.
+    causing this test to fail. That's expected - update spider logic when it happens.
     """
-    scraper = AIDeadlinesScraper()
-    result = scraper.scrape(timeout=30.0)
+    # Collect items from spider
+    collected_items = []
     
-    # Verify ScrapeResult structure
-    assert result.source_name == "aideadlines"
-    assert result.schema_version == "1.0"
-    assert result.scraped_at is not None
-    assert result.raw_data is not None
-    assert isinstance(result.raw_data, str), "Raw data should be HTML string"
+    def collect_item(item, response, spider):
+        collected_items.append(dict(item))
     
-    # Verify we got some data (may be 0 if page structure changed)
-    assert isinstance(result.normalized, list)
+    # Configure and run spider
+    settings = get_project_settings()
+    settings.set('ITEM_PIPELINES', {
+        'confradar.scrapers.pipelines.ValidationPipeline': 100,
+    })
+    settings.set('HTTPCACHE_ENABLED', False)  # Don't use cache for integration test
     
-    # Verify metadata
-    assert "count" in result.metadata
-    assert result.metadata["count"] == len(result.normalized)
+    process = CrawlerProcess(settings)
     
-    if len(result.normalized) > 0:
-        # Verify normalized schema
-        first_conf = result.normalized[0]
-        assert "key" in first_conf
-        assert "name" in first_conf
-        assert "deadlines" in first_conf
-        assert isinstance(first_conf["deadlines"], list)
-        
-        print(f"\n✓ Scraped {len(result.normalized)} conferences from AI Deadlines")
-        print(f"  Sample: {first_conf['name']} ({first_conf['key']})")
-    else:
-        print("\n⚠ No conferences extracted - page structure may have changed")
-        print(f"  HTML length: {len(result.raw_data)} chars")
-        print("  This is expected for HTML scrapers - update parse() logic as needed")
+    # Connect item signal
+    from scrapy import signals
+    from scrapy.signalmanager import dispatcher
+    dispatcher.connect(collect_item, signal=signals.item_scraped)
+    
+    process.crawl(AIDeadlinesSpider)
+    process.start()  # Blocks until spider finishes
+    
+    # Verify we got some data
+    assert len(collected_items) > 0, "Should scrape at least one conference"
+    
+    # Verify item structure
+    first_item = collected_items[0]
+    assert "key" in first_item
+    assert "name" in first_item
+    assert "source" in first_item
+    assert first_item["source"] == "aideadlines"
+    assert "scraped_at" in first_item
+    
+    print(f"\n✓ Scraped {len(collected_items)} conferences from AI Deadlines")
+    print(f"  Sample: {first_item['name']} ({first_item['key']})")
+
+
+@pytest.mark.integration  
+def test_ai_deadlines_spider_output_json(tmp_path):
+    """Test spider can output to JSON file."""
+    output_file = tmp_path / "conferences.json"
+    
+    settings = get_project_settings()
+    settings.set('FEEDS', {
+        str(output_file): {'format': 'json', 'overwrite': True}
+    })
+    settings.set('HTTPCACHE_ENABLED', False)
+    
+    process = CrawlerProcess(settings)
+    process.crawl(AIDeadlinesSpider)
+    process.start()
+    
+    # Verify file was created and has content
+    assert output_file.exists()
+    
+    import json
+    with open(output_file) as f:
+        data = json.load(f)
+    
+    assert isinstance(data, list)
+    assert len(data) > 0
+    print(f"\n✓ Exported {len(data)} conferences to {output_file}")
