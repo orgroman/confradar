@@ -37,6 +37,7 @@ Services will be available at:
 - **Dagster UI**: http://localhost:3000
 - **LiteLLM Proxy**: http://localhost:4000
 - **PostgreSQL**: localhost:5432
+- **pgAdmin**: http://localhost:5050 (email: admin@confradar.local, password: admin)
 
 ## Run tests
 
@@ -131,6 +132,22 @@ docker volume rm confradar_postgres_data
 docker compose up -d postgres
 uv run alembic upgrade head
 ```
+
+### Using pgAdmin
+
+pgAdmin provides a web-based interface for managing PostgreSQL:
+
+1. Open http://localhost:5050
+2. Login with credentials (default: admin@confradar.local / admin)
+3. Add server connection:
+   - **Name**: ConfRadar Local
+   - **Host**: postgres (or localhost if connecting from host)
+   - **Port**: 5432
+   - **Database**: confradar
+   - **Username**: confradar
+   - **Password**: confradar
+
+You can now browse tables, run queries, and manage the database visually.
 
 ## Dagster Orchestration
 

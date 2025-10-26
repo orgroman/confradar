@@ -140,6 +140,7 @@ $env:OPENAI_BASE_URL = "https://api.openai.com/v1"
 - **Dagster UI**: http://localhost:3000
 - **LiteLLM Proxy**: http://localhost:4000
 - **PostgreSQL**: localhost:5432 (username: confradar, password: confradar)
+- **pgAdmin**: http://localhost:5050 (email: admin@confradar.local, password: admin)
 
 ## Contributing
 
