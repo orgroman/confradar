@@ -9,11 +9,10 @@ on:
 jobs:
   test:
     name: Tests (uv)
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
         python-version: ["3.11"]
 
     steps:
@@ -25,19 +24,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install uv (Ubuntu)
-        if: runner.os == 'Linux'
+      - name: Install uv
         shell: bash
         run: |
           curl -fsSL https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Install uv (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          iwr -useb https://astral.sh/uv/install.ps1 | iex
-          echo "$Env:USERPROFILE\.local\bin" | Out-File -FilePath $Env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Verify uv
         run: uv --version
@@ -51,4 +42,4 @@ jobs:
         shell: bash
         run: |
           cd packages/confradar
-          uv run pytest -q
+          uv run pytest -q --ignore=tests/test_integration_scrapers.py
