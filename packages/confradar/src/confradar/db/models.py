@@ -21,7 +21,8 @@ class Conference(TimestampMixin, Base):
         Index("ix_conference_name", "name"),
     )
 
-    deadlines: Mapped[list["Deadline"]] = relationship(back_populates="conference")
+    deadlines: Mapped[list["Deadline"]] = relationship(back_populates="conference", cascade="all, delete-orphan")
+    sources: Mapped[list["Source"]] = relationship(back_populates="conference", cascade="all, delete-orphan")
 
 
 class Source(TimestampMixin, Base):
@@ -31,7 +32,7 @@ class Source(TimestampMixin, Base):
     url: Mapped[str] = mapped_column(String(800), nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
-    conference: Mapped[Conference] = relationship()
+    conference: Mapped[Conference] = relationship(back_populates="sources")
     __table_args__ = (
         UniqueConstraint("conference_id", "url", name="uq_source_conf_url"),
         Index("ix_source_url", "url"),

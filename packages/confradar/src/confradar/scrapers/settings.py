@@ -60,7 +60,7 @@ DEFAULT_REQUEST_HEADERS = {
 ITEM_PIPELINES = {
     "confradar.scrapers.pipelines.ValidationPipeline": 100,
     "confradar.scrapers.pipelines.DeduplicationPipeline": 200,
-    # "confradar.scrapers.pipelines.DatabasePipeline": 300,  # Enable when ready
+    "confradar.scrapers.pipelines.DatabasePipeline": 300,  # Store in PostgreSQL
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
