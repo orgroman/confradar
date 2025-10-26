@@ -107,9 +107,11 @@ Middleware (Headers, Retries, Rate Limiting)
 
 **Technologies**:
 - **SQLAlchemy ORM**: Database abstraction
-- **SQLite**: Default development database
-- **PostgreSQL**: Production database (via DATABASE_URL)
+- **PostgreSQL**: Primary database (Docker Compose, production)
+- **SQLite**: Legacy support for local testing only
 - **Alembic**: Schema migrations
+
+> **Note**: Migration from SQLite to PostgreSQL is in progress (P0, M1). PostgreSQL is required for production deployments due to better concurrency, transaction handling, and cloud compatibility. See [PostgreSQL Migration Issue](../issues/postgres-migration.md) for details.
 
 **Models**:
 - `Conference`: Core conference entity

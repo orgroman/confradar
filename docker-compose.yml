@@ -1,6 +1,24 @@
 version: "3.9"
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: confradar-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-confradar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-confradar}
+      POSTGRES_DB: ${POSTGRES_DB:-confradar}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U confradar"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     container_name: litellm-proxy
@@ -21,7 +39,7 @@ services:
     container_name: dagster-daemon
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
-      DATABASE_URL: ${DATABASE_URL:-sqlite:////opt/dagster/data/confradar.db}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://confradar:confradar@postgres:5432/confradar}
       CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
@@ -31,7 +49,10 @@ services:
     command: ["uv", "run", "dagster-daemon", "run"]
     restart: unless-stopped
     depends_on:
-      - litellm
+      postgres:
+        condition: service_healthy
+      litellm:
+        condition: service_started
 
   dagster-webserver:
     build:
@@ -42,7 +63,7 @@ services:
       - "3000:3000"
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
-      DATABASE_URL: ${DATABASE_URL:-sqlite:////opt/dagster/data/confradar.db}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://confradar:confradar@postgres:5432/confradar}
       CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
@@ -52,9 +73,14 @@ services:
     command: ["uv", "run", "dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
     restart: unless-stopped
     depends_on:
-      - dagster-daemon
-      - litellm
+      postgres:
+        condition: service_healthy
+      dagster-daemon:
+        condition: service_started
+      litellm:
+        condition: service_started
 
 volumes:
+  postgres_data:
   dagster_data:
   dagster_home:

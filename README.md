@@ -25,6 +25,12 @@ AI-powered agent that tracks academic conference deadlines by crawling CFP pages
 
 We use uv for Python dependency management and fast workflows. You can still use pip, but uv is preferred.
 
+### Prerequisites
+
+- **Docker Desktop** (for PostgreSQL and services)
+- **Python 3.10+**
+- **uv** package manager
+
 On Windows PowerShell:
 
 ```powershell
@@ -33,29 +39,64 @@ iwr -useb https://astral.sh/uv/install.ps1 | iex
 
 # Create venv and install deps (project + dev extras)
 uv sync --extra dev
+```
 
-# Run tests (from package directory)
-cd packages/confradar
-uv run pytest -q
-cd ../..
+### Start Services
 
-uv run confradar parse --text "Submission: Nov 15, 2025 (AoE)"
-uv run confradar fetch https://www.example.org/cfp
+Start PostgreSQL, LiteLLM proxy, and Dagster services:
 
-### Database migrations (Alembic)
+```powershell
+# Start all services
+docker compose up -d
 
-Generate and apply migrations using Alembic. Default DB URL is `sqlite:///confradar.db`.
+# Check service status
+docker compose ps
+
+# View logs
+docker compose logs -f postgres
+```
+
+### Database Setup
+
+Run Alembic migrations to create database tables:
 
 ```powershell
 # From repo root
-uv run alembic revision --autogenerate -m "change message"
 uv run alembic upgrade head
 
-# Override DB URL (e.g., PostgreSQL)
-$env:DATABASE_URL = "postgresql+psycopg://user:pass@localhost:5432/confradar"
+# Generate new migration (after model changes)
+uv run alembic revision --autogenerate -m "change message"
+```
+
+### Run Tests
+
+```powershell
+# From package directory
+cd packages/confradar
+uv run pytest -q
+cd ../..
+```
+
+### CLI Usage
+
+```powershell
+uv run confradar parse --text "Submission: Nov 15, 2025 (AoE)"
+uv run confradar fetch https://www.example.org/cfp
+```
+
+### Database Configuration
+
+Default connection uses PostgreSQL via Docker Compose:
+```powershell
+# Default (PostgreSQL in Docker)
+DATABASE_URL=postgresql+psycopg://confradar:confradar@localhost:5432/confradar
+
+# For local testing with SQLite (optional)
+$env:DATABASE_URL = "sqlite:///test.db"
 uv run alembic upgrade head
 ```
-```
+
+See `.env.example` for all configuration options.
 
 Notes:
 - Monorepo structure will evolve (apps/, packages/, infra/). Current library lives under `src/confradar/` with tests in `tests/`.
@@ -69,7 +110,7 @@ Repo scripts and ops:
 
 ## LiteLLM proxy (recommended)
 
-Run a local LiteLLM proxy so the app can talk to an OpenAI-compatible endpoint without hard-coding a vendor. The proxy listens on http://localhost:4000.
+Run a local LiteLLM proxy so the app can talk to an OpenAI-compatible endpoint without hard-coding a vendor. The proxy listens on http://localhost:4000 and is included in the Docker Compose setup.
 
 1. Set your API key (service account preferred):
 
@@ -78,7 +119,7 @@ $env:CONFRADAR_SA_OPENAI = "<your-openai-key>"
 # Alternatively: $env:OPENAI_API_KEY = "..."
 ```
 
-2. Start the proxy with Docker Compose from the repo root:
+2. LiteLLM proxy starts automatically with Docker Compose:
 
 ```powershell
 docker compose up -d
@@ -93,6 +134,12 @@ $env:LLM_BASE_URL = "https://api.openai.com/v1"
 # or
 $env:OPENAI_BASE_URL = "https://api.openai.com/v1"
 ```
+
+### Accessing Services
+
+- **Dagster UI**: http://localhost:3000
+- **LiteLLM Proxy**: http://localhost:4000
+- **PostgreSQL**: localhost:5432 (username: confradar, password: confradar)
 
 ## Contributing
 

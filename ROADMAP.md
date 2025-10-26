@@ -13,6 +13,7 @@ This roadmap turns the docs into actionable milestones and tracks near-term exec
 ## Milestones
 
 ### M1: MVP core pipeline (Q4 2025)
+- **Infrastructure:** Migrate from SQLite to PostgreSQL with Docker Compose support (P0)
 - Retrieval: seeded crawling + basic search fallback
 - Extraction: rule-first + LLM fallback to ConfRadar schema
 - KB: store conference event records; last_updated

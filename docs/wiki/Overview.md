@@ -97,12 +97,14 @@ ConfRadar automates the entire pipeline from discovery to presentation:
 
 - **Orchestration**: Dagster (asset-based pipeline with scheduling and monitoring)
 - **Web Scraping**: Scrapy (production-grade framework with 5 spiders)
-- **Database**: SQLAlchemy ORM with SQLite/PostgreSQL, Alembic migrations
+- **Database**: SQLAlchemy ORM with PostgreSQL (SQLite for local testing only), Alembic migrations
 - **LLM Access**: LiteLLM client and local proxy (OpenAI-compatible)
 - **Package Management**: uv (fast Python dependency management and workspaces)
-- **Containers**: Docker Compose (LiteLLM proxy, Dagster daemon/webserver)
+- **Containers**: Docker Compose (PostgreSQL, LiteLLM proxy, Dagster daemon/webserver)
 - **Testing**: pytest with coverage tracking
 - **CI/CD**: GitHub Actions
+
+> **Migration Note**: PostgreSQL is now the default database for production and development. SQLite support is maintained for unit tests only. See [PostgreSQL Migration Issue](../issues/postgres-migration.md).
 
 ### Monorepo & uv workspace
 
