@@ -62,9 +62,13 @@ class AIDeadlinesScraper(Scraper):
             return resp.text
 
     def parse(self, raw: str, **kwargs: Any) -> List[Dict[str, Any]]:
-        """Parse HTML into normalized ConferenceItem records."""
+        """Parse HTML into normalized ConferenceItem records.
+        
+        The AI Deadlines site embeds deadline information in JavaScript code blocks.
+        We extract this using regex patterns to find moment.tz() calls.
+        """
         soup = BeautifulSoup(raw, 'html.parser')
-        conferences = []
+        conferences = {}  # Use dict to deduplicate by key
         
         # Find conference entries - structure may vary, this is a best-effort parse
         # Look for conference links and deadline info
@@ -75,15 +79,22 @@ class AIDeadlinesScraper(Scraper):
                     continue
                     
                 key = conf_id.group(1)
+                
+                # Skip if we already have this conference (avoid duplicates)
+                if key in conferences:
+                    continue
+                
                 name = link.get_text(strip=True)
                 
                 # Try to find the conference's website link (usually nearby)
                 homepage = None
                 parent = link.parent
                 if parent:
-                    website_link = parent.find('a', href=re.compile(r'^https?://'))
-                    if website_link:
-                        homepage = website_link.get('href')
+                    parent_parent = parent.parent
+                    if parent_parent:
+                        website_link = parent_parent.find('a', href=re.compile(r'^https?://'), title="Conference Website")
+                        if website_link:
+                            homepage = website_link.get('href')
                 
                 # Extract year from key if present (e.g., 'icml25' -> 2025)
                 year = None
@@ -92,19 +103,63 @@ class AIDeadlinesScraper(Scraper):
                     yr = int(year_match.group(1))
                     year = 2000 + yr if yr < 50 else 1900 + yr
                 
-                conf_dict = {
+                conferences[key] = {
                     'key': key,
                     'name': name,
                     'year': year,
                     'homepage': homepage,
-                    'deadlines': []  # Deadline extraction would require more complex parsing
+                    'deadlines': []
                 }
-                conferences.append(conf_dict)
             except Exception:
                 # Skip malformed entries
                 continue
         
-        return conferences
+        # Extract deadline information from JavaScript blocks
+        # Pattern: var timezone = "UTC-12"; moment.tz("YYYY-MM-DD HH:MM:SS", timezone)
+        # We need to match conference IDs with their timezone and deadline
+        script_tags = soup.find_all('script', string=True)
+        for script in script_tags:
+            script_text = script.string
+            if not script_text:
+                continue
+            
+            # Find conference deadline blocks
+            # Each block looks like: $('#confkey') ... var timezone = "..."; moment.tz("date", timezone)
+            conf_block_pattern = re.compile(
+                r'\$\([\'"]#(\w+).*?var\s+timezone\s*=\s*[\'"]([^\'\"]+)[\'"].*?moment\.tz\([\'"]([^\'\"]+)[\'"]',
+                re.DOTALL
+            )
+            
+            for match in conf_block_pattern.finditer(script_text):
+                conf_key = match.group(1)
+                timezone_str = match.group(2)
+                deadline_str = match.group(3)
+                
+                # Skip non-conference entries (like 'subject')
+                if conf_key not in conferences:
+                    continue
+                
+                try:
+                    # Parse the deadline string (handle both with and without seconds)
+                    try:
+                        deadline_dt = datetime.strptime(deadline_str, "%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        # Try without seconds
+                        deadline_dt = datetime.strptime(deadline_str, "%Y-%m-%d %H:%M")
+                    
+                    # Add deadline to conference
+                    # Note: We're assuming this is a submission deadline
+                    # The site doesn't always distinguish between abstract/submission
+                    conferences[conf_key]['deadlines'].append({
+                        'kind': 'submission',
+                        'due_at': deadline_dt.isoformat(),
+                        'timezone': timezone_str
+                    })
+                except ValueError:
+                    # Skip if date parsing fails
+                    continue
+        
+        return list(conferences.values())
 
     def validate(self, normalized: List[Dict[str, Any]]) -> None:
         """Validate normalized output has required fields."""

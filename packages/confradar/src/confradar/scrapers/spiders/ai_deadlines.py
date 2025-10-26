@@ -41,6 +41,9 @@ class AIDeadlinesSpider(scrapy.Spider):
         """
         self.logger.info(f"Parsing {response.url}")
         
+        # Build a dict of conferences first to avoid duplicates
+        conferences = {}
+        
         # Find all conference links
         conference_links = response.css('a[href*="/conference?id="]')
         
@@ -53,6 +56,11 @@ class AIDeadlinesSpider(scrapy.Spider):
                     continue
                 
                 key = conf_match.group(1)
+                
+                # Skip if we already have this conference
+                if key in conferences:
+                    continue
+                
                 name = link.css('::text').get('').strip()
                 
                 if not name:
@@ -64,22 +72,70 @@ class AIDeadlinesSpider(scrapy.Spider):
                 # Try to find homepage link nearby
                 homepage = self._find_homepage(link)
                 
-                item = ConferenceItem(
-                    key=key,
-                    name=name,
-                    year=year,
-                    homepage=homepage,
-                    deadlines=[],  # TODO: Extract deadline info from page
-                    source="aideadlines",
-                    scraped_at=datetime.now(timezone.utc).isoformat(),
-                    url=response.url,
-                )
-                
-                yield item
+                conferences[key] = {
+                    'key': key,
+                    'name': name,
+                    'year': year,
+                    'homepage': homepage,
+                    'deadlines': []
+                }
                 
             except Exception as e:
                 self.logger.warning(f"Failed to parse conference link: {e}")
                 continue
+        
+        # Extract deadlines from JavaScript
+        script_tags = response.xpath('//script/text()').getall()
+        for script_text in script_tags:
+            if not script_text:
+                continue
+            
+            # Find conference deadline blocks
+            # Pattern: $('#confkey') ... var timezone = "..."; moment.tz("date", timezone)
+            conf_block_pattern = re.compile(
+                r'\$\([\'"]#(\w+).*?var\s+timezone\s*=\s*[\'"]([^\'\"]+)[\'"].*?moment\.tz\([\'"]([^\'\"]+)[\'"]',
+                re.DOTALL
+            )
+            
+            for match in conf_block_pattern.finditer(script_text):
+                conf_key = match.group(1)
+                timezone_str = match.group(2)
+                deadline_str = match.group(3)
+                
+                # Skip if not a conference we're tracking
+                if conf_key not in conferences:
+                    continue
+                
+                # Parse deadline (handle with/without seconds)
+                try:
+                    try:
+                        deadline_dt = datetime.strptime(deadline_str, "%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        deadline_dt = datetime.strptime(deadline_str, "%Y-%m-%d %H:%M")
+                    
+                    conferences[conf_key]['deadlines'].append({
+                        'kind': 'submission',
+                        'due_at': deadline_dt.isoformat(),
+                        'timezone': timezone_str
+                    })
+                except ValueError:
+                    # Skip invalid dates
+                    continue
+        
+        # Yield conference items
+        for conf_data in conferences.values():
+            item = ConferenceItem(
+                key=conf_data['key'],
+                name=conf_data['name'],
+                year=conf_data['year'],
+                homepage=conf_data['homepage'],
+                deadlines=conf_data['deadlines'],
+                source="aideadlines",
+                scraped_at=datetime.now(timezone.utc).isoformat(),
+                url=response.url,
+            )
+            
+            yield item
     
     def _extract_year(self, key: str) -> int | None:
         """Extract year from conference key.
