@@ -94,6 +94,12 @@ uv run alembic upgrade head
 docker compose exec postgres psql -U confradar -d confradar -c "\dt"
 ```
 
+You should see these tables:
+- `conferences` - Conference information (key, name, homepage)
+- `sources` - Source URLs for conferences
+- `deadlines` - Conference deadlines (submission, notification, etc.)
+- `alembic_version` - Migration version tracking
+
 ### Create New Migrations
 
 After modifying database models:
@@ -188,7 +194,75 @@ docker compose logs -f dagster-webserver
 
 Access the Dagster UI at: **http://localhost:3000**
 
-### Materialize assets manually
+## Running Scrapers
+
+ConfRadar uses Scrapy to scrape conference data from various sources.
+
+### Run a Scraper Manually
+
+```powershell
+cd packages/confradar
+
+# Run AI Deadlines scraper (stores in database)
+uv run scrapy crawl ai_deadlines
+
+# Run other scrapers
+uv run scrapy crawl acl_web
+uv run scrapy crawl wikicfp
+```
+
+**Note**: Make sure PostgreSQL is running before running scrapers.
+
+### View Scraped Data
+
+Check the database to see scraped conferences:
+
+```powershell
+# View all conferences
+docker compose exec postgres psql -U confradar -d confradar -c "
+  SELECT key, name, homepage FROM conferences ORDER BY key LIMIT 10;
+"
+
+# View conferences with deadlines
+docker compose exec postgres psql -U confradar -d confradar -c "
+  SELECT c.name, d.kind, d.due_date, d.timezone
+  FROM conferences c
+  JOIN deadlines d ON d.conference_id = c.id
+  WHERE d.due_date > CURRENT_DATE
+  ORDER BY d.due_date
+  LIMIT 20;
+"
+
+# Count scraped items
+docker compose exec postgres psql -U confradar -d confradar -c "
+  SELECT 
+    COUNT(*) as total_conferences,
+    COUNT(DISTINCT d.id) as total_deadlines,
+    COUNT(DISTINCT s.id) as total_sources
+  FROM conferences c
+  LEFT JOIN deadlines d ON d.conference_id = c.id
+  LEFT JOIN sources s ON s.conference_id = c.id;
+"
+```
+
+### Test Scrapers
+
+```powershell
+cd packages/confradar
+
+# Run unit tests (fast, no database)
+uv run pytest tests/test_ai_deadlines_scraper.py -v
+
+# Run integration tests (requires PostgreSQL)
+uv run pytest tests/test_database_pipeline.py -v
+
+# Run all scraper tests
+uv run pytest tests/test_*scraper*.py tests/test_*pipeline*.py -v
+```
+
+### Daily Schedule
+
+The pipeline runs automatically at **2:00 AM UTC** every day (configured in `daily_crawl_schedule`). This requires the Dagster daemon to be running.
 
 From the UI:
 1. Navigate to **Assets**

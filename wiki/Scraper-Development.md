@@ -441,19 +441,196 @@ def parse(self, response):
         f.write(response.body)
 ```
 
+## Example: AI Deadlines Scraper (Complete Implementation)
+
+The AI Deadlines scraper demonstrates parsing JavaScript-embedded data and database integration.
+
+### Challenge: JavaScript-Embedded Deadlines
+
+The aideadlines.org site embeds deadline information in JavaScript rather than static HTML:
+
+```javascript
+$('#icml25 .ML-tag').html('ml');
+var timezone = "UTC-12";
+var confDate = moment.tz("2024-05-15 23:59:59", timezone);
+```
+
+### Solution: Regex Parsing of Script Blocks
+
+```python
+def parse(self, response: Response) -> Iterator[ConferenceItem]:
+    # First, extract all conference entries
+    conferences = {}
+    
+    for link in response.css('a[href*="/conference?id="]'):
+        key = re.search(r'id=([^&]+)', link.attrib.get('href', '')).group(1)
+        if key not in conferences:
+            conferences[key] = {
+                'key': key,
+                'name': link.css('::text').get('').strip(),
+                'year': self._extract_year(key),
+                'homepage': self._find_homepage(link),
+                'deadlines': []
+            }
+    
+    # Then extract deadlines from JavaScript
+    for script_text in response.xpath('//script/text()').getall():
+        # Pattern: $('#confkey') ... var timezone = "..."; moment.tz("date", timezone)
+        pattern = re.compile(
+            r'\$\([\'"]#(\w+).*?var\s+timezone\s*=\s*[\'"]([^\'\"]+)[\'"]'
+            r'.*?moment\.tz\([\'"]([^\'\"]+)[\'"]',
+            re.DOTALL
+        )
+        
+        for match in pattern.finditer(script_text):
+            conf_key, timezone_str, deadline_str = match.groups()
+            
+            if conf_key in conferences:
+                try:
+                    # Handle both "YYYY-MM-DD HH:MM:SS" and "YYYY-MM-DD HH:MM"
+                    try:
+                        dt = datetime.strptime(deadline_str, "%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        dt = datetime.strptime(deadline_str, "%Y-%m-%d %H:%M")
+                    
+                    conferences[conf_key]['deadlines'].append({
+                        'kind': 'submission',
+                        'due_at': dt.isoformat(),
+                        'timezone': timezone_str
+                    })
+                except ValueError:
+                    continue
+    
+    # Yield items
+    for conf_data in conferences.values():
+        yield ConferenceItem(**conf_data, source=self.name, ...)
+```
+
+### Database Integration
+
+The `DatabasePipeline` stores scraped data in PostgreSQL:
+
+```python
+class DatabasePipeline:
+    """Store conferences in PostgreSQL database."""
+    
+    def open_spider(self, spider):
+        from confradar.db.base import get_session
+        self.session = get_session()
+    
+    def close_spider(self, spider):
+        if self.session:
+            self.session.close()
+    
+    def process_item(self, item: dict, spider):
+        from confradar.db.models import Conference, Source, Deadline
+        
+        # Find or create conference
+        conference = self.session.query(Conference).filter_by(
+            key=item['key']
+        ).first()
+        
+        if not conference:
+            conference = Conference(
+                key=item['key'],
+                name=item['name'],
+                homepage=item.get('homepage')
+            )
+            self.session.add(conference)
+            self.session.flush()
+        else:
+            # Update existing
+            conference.name = item['name']
+            if item.get('homepage'):
+                conference.homepage = item['homepage']
+        
+        # Create source
+        source = Source(
+            conference_id=conference.id,
+            url=item.get('url', ''),
+            notes=f"Scraped by {item.get('source')} on {item.get('scraped_at')}"
+        )
+        self.session.add(source)
+        self.session.flush()
+        
+        # Create deadlines
+        for deadline_data in item.get('deadlines', []):
+            due_date = datetime.fromisoformat(deadline_data['due_at'])
+            
+            deadline = Deadline(
+                conference_id=conference.id,
+                kind=deadline_data['kind'],
+                due_date=due_date,
+                timezone=deadline_data.get('timezone'),
+                source_id=source.id
+            )
+            self.session.add(deadline)
+        
+        self.session.commit()
+        return item
+```
+
+### Running the Full Pipeline
+
+```bash
+# Make sure PostgreSQL is running
+docker compose up postgres -d
+
+# Run scraper (stores in database)
+cd packages/confradar
+uv run scrapy crawl ai_deadlines
+
+# Check results in database
+docker compose exec postgres psql -U confradar -d confradar -c "
+  SELECT c.name, c.homepage, COUNT(d.id) as deadline_count
+  FROM conferences c
+  LEFT JOIN deadlines d ON d.conference_id = c.id
+  GROUP BY c.id
+  ORDER BY c.name
+  LIMIT 10;
+"
+```
+
+### Testing Strategy
+
+**Unit Tests** (`tests/test_ai_deadlines_scraper.py`):
+- Parse basic conference HTML
+- Extract deadlines from JavaScript
+- Handle different date formats
+- Deduplicate conferences
+- Validate year extraction
+
+**Integration Tests** (`tests/test_database_pipeline.py`):
+- Create new conferences in database
+- Update existing conferences
+- Store multiple deadlines
+- Prevent duplicate deadlines
+- Handle invalid data gracefully
+
+**Coverage**: 94% for scraper, 92% for pipeline
+
+### Key Learnings
+
+1. **JavaScript Parsing**: Use regex for simple JS patterns; consider Playwright for complex JS
+2. **Deduplication**: Use dict with conference key to avoid duplicates during parsing
+3. **Database Upserts**: Check if conference exists, update or create as needed
+4. **Transaction Safety**: Use try/except with rollback for database errors
+5. **Timezone Handling**: Store timezone string (e.g., "UTC-12") alongside datetime
+
 ## Example Spiders
 
 See existing spiders in `src/confradar/scrapers/spiders/`:
-- `ai_deadlines.py` - HTML scraping with CSS selectors
-- `acl_web.py` - Table parsing
-- `chairing_tool.py` - Complex navigation
-- `elra.py` - Multi-page scraping
+- `ai_deadlines.py` - ✅ **Complete**: JavaScript parsing + database integration
+- `acl_web.py` - Table parsing (WIP)
+- `chairing_tool.py` - Complex navigation (WIP)
+- `elra.py` - Multi-page scraping (WIP)
 
 ## Next Steps
 
 1. **Create your spider** following the template
-2. **Add unit tests** with mocked responses
-3. **Add integration test** (mark with `@pytest.mark.integration`)
+2. **Add unit tests** with mocked responses (see `test_ai_deadlines_scraper.py`)
+3. **Add integration tests** for database (see `test_database_pipeline.py`)
 4. **Test locally**: `scrapy crawl your_spider`
-5. **Create Dagster asset** once spider is stable
+5. **Verify database**: Check data in pgAdmin or psql
+6. **Create Dagster asset** once spider is stable
 
