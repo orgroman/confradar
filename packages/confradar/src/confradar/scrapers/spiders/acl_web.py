@@ -5,6 +5,7 @@ Scrapes conference listings from ACL (Association for Computational Linguistics)
 from datetime import datetime, timezone
 from typing import Any, Iterator
 import re
+import hashlib
 
 import scrapy
 from scrapy.http import Response
@@ -86,15 +87,15 @@ class ACLWebSpider(scrapy.Spider):
                 detail_link = response.urljoin(detail_link)
             
             # Extract location info
-            location = cells[1].css('::text').get('').strip()
-            city = cells[2].css('::text').get('').strip()
-            country = cells[3].css('::text').get('').strip()
+            location = ' '.join(cells[1].css('*::text, ::text').getall()).strip()
+            city = ' '.join(cells[2].css('*::text, ::text').getall()).strip()
+            country = ' '.join(cells[3].css('*::text, ::text').getall()).strip()
             
             # Extract submission deadline (column 4)
-            deadline_text = cells[4].css('::text').get('').strip()
+            deadline_text = ' '.join(cells[4].css('*::text, ::text').getall()).strip()
             
             # Extract event dates (column 5)
-            event_dates_text = cells[5].css('::text').get('').strip()
+            event_dates_text = ' '.join(cells[5].css('*::text, ::text').getall()).strip()
             
             # Extract year from name or event dates
             year = self._extract_year(name)
@@ -189,5 +190,9 @@ class ACLWebSpider(scrapy.Spider):
         
         if year:
             key += str(year)[-2:]  # Last 2 digits
+        else:
+            # No year available - add a short hash suffix to ensure uniqueness
+            name_hash = hashlib.md5(name.encode()).hexdigest()[:4]
+            key += f"_{name_hash}"
         
         return key
