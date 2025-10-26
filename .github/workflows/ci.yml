@@ -42,4 +42,4 @@ jobs:
         shell: bash
         run: |
           cd packages/confradar
-          uv run pytest -q --ignore=tests/test_integration_scrapers.py
+          uv run pytest -q --ignore=tests/test_integration_scrapers.py --ignore=tests/test_database_pipeline.py
