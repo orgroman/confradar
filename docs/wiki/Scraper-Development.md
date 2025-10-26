@@ -103,7 +103,200 @@ name = response.xpath('//div[@class="deadline"]/../h2/text()').get()
 items = response.xpath('//div[@class="item" and @data-type="conference"]')
 ```
 
-### 3. Handling Pagination
+### 3. Real-World Example: ACL Web Scraper
+
+The ACL Web scraper demonstrates several practical patterns for handling real-world challenges:
+
+#### Challenge 1: Bot Protection with Cookie Requirements
+
+Some sites block automated requests. ACL Web requires a cookie to bypass JavaScript-based checks:
+
+```python
+from scrapy import Request
+
+class ACLWebSpider(scrapy.Spider):
+    name = "acl_web"
+    allowed_domains = ["aclweb.org"]
+    start_urls = ["https://www.aclweb.org/portal/events"]
+    
+    custom_settings = {
+        "DOWNLOAD_DELAY": 2,
+        "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    }
+    
+    def start_requests(self):
+        """Override to inject required cookie before first request."""
+        for url in self.start_urls:
+            yield Request(
+                url=url,
+                cookies={"humans_21909": "1"},  # Required by aclweb.org
+                callback=self.parse
+            )
+```
+
+**Key takeaway:** When you see 409 Conflict or similar bot-protection errors, inspect the site's cookies and inject them in `start_requests()`.
+
+#### Challenge 2: Extracting Text from Nested Elements
+
+CSS selectors like `::text` only get direct text nodes, missing content in nested tags:
+
+```python
+# ❌ BAD: Only gets direct text, misses nested spans/links
+deadline = cell.css('::text').get()
+
+# ✅ GOOD: Gets all text including nested elements
+deadline_parts = cell.css('*::text, ::text').getall()
+deadline = ' '.join(part.strip() for part in deadline_parts if part.strip())
+```
+
+**Example from ACL Web:**
+```html
+<td>
+    <span class="date">15 May 2025</span>
+    <a href="#">(extended)</a>
+</td>
+```
+Using `.getall()` captures both "15 May 2025" and "(extended)".
+
+#### Challenge 3: Unique Key Generation with Missing Data
+
+Conferences may lack year information, causing key collisions. Use fallback strategies:
+
+```python
+import hashlib
+
+def _generate_key(self, title: str, year: Optional[int]) -> str:
+    """Generate unique key with hash fallback for missing years."""
+    # Extract acronyms (uppercase words/sequences)
+    acronyms = re.findall(r'\b[A-Z]{2,}\b', title)
+    
+    if acronyms:
+        # Use longest acronym for better uniqueness
+        base = max(acronyms, key=len).lower()
+    else:
+        # Fallback to first word
+        base = title.split()[0].lower() if title else "unknown"
+    
+    if year:
+        # Standard format: "acl25"
+        return f"{base}{year % 100:02d}"
+    else:
+        # Hash suffix for uniqueness: "nlp_a3f2"
+        hash_suffix = hashlib.md5(title.encode()).hexdigest()[:4]
+        return f"{base}_{hash_suffix}"
+```
+
+**Key takeaway:** Always ensure key uniqueness, even when expected data is missing. Hash-based suffixes prevent collisions.
+
+#### Challenge 4: Flexible Date Parsing
+
+Real-world dates come in many formats. Support multiple patterns:
+
+```python
+from datetime import datetime, timezone
+import re
+
+def _parse_date(self, date_str: str) -> Optional[str]:
+    """Parse various date formats to ISO 8601."""
+    if not date_str:
+        return None
+    
+    date_str = date_str.strip()
+    
+    # Try common formats: "15 May 2025", "2 Jun 2025"
+    for fmt in ["%d %b %Y", "%d %B %Y"]:
+        try:
+            dt = datetime.strptime(date_str, fmt)
+            return dt.replace(tzinfo=timezone.utc).isoformat()
+        except ValueError:
+            continue
+    
+    # Try ISO format: "2025-05-15"
+    if re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
+        try:
+            dt = datetime.fromisoformat(date_str)
+            return dt.replace(tzinfo=timezone.utc).isoformat()
+        except ValueError:
+            pass
+    
+    self.logger.warning(f"Could not parse date: {date_str}")
+    return None
+```
+
+#### Full ACL Web Example
+
+```python
+def parse(self, response: Response) -> Iterator[ConferenceItem]:
+    """Parse ACL events table with 6 columns per row."""
+    self.logger.info(f"Parsing ACL events from {response.url}")
+    
+    # ACL uses a table structure: Title | Location | City | Country | Deadline | Dates
+    rows = response.css('table tbody tr')
+    
+    for row in rows:
+        cells = row.css('td')
+        if len(cells) < 6:
+            continue  # Skip malformed rows
+        
+        # Extract text from each cell (handles nested elements)
+        title = ' '.join(cells[0].css('*::text, ::text').getall()).strip()
+        location = ' '.join(cells[1].css('*::text, ::text').getall()).strip()
+        city = ' '.join(cells[2].css('*::text, ::text').getall()).strip()
+        country = ' '.join(cells[3].css('*::text, ::text').getall()).strip()
+        deadline_str = ' '.join(cells[4].css('*::text, ::text').getall()).strip()
+        dates_str = ' '.join(cells[5].css('*::text, ::text').getall()).strip()
+        
+        if not title:
+            continue
+        
+        # Extract year from title or dates
+        year = self._extract_year(title) or self._extract_year(dates_str)
+        
+        # Generate unique key (with hash fallback)
+        key = self._generate_key(title, year)
+        
+        # Parse deadline
+        deadlines = []
+        if deadline_str:
+            parsed_deadline = self._parse_date(deadline_str)
+            if parsed_deadline:
+                deadlines.append({
+                    "type": "submission",
+                    "date": parsed_deadline,
+                    "timezone": "AoE",  # ACL typically uses Anywhere on Earth
+                })
+        
+        # Extract homepage link if present
+        homepage = cells[0].css('a::attr(href)').get()
+        
+        yield ConferenceItem(
+            key=key,
+            name=title,
+            year=year,
+            location=f"{city}, {country}".strip(", ") if city or country else location,
+            homepage=homepage,
+            deadlines=deadlines,
+            source=self.name,
+            scraped_at=datetime.now(timezone.utc).isoformat(),
+            url=response.url,
+        )
+    
+    self.logger.info(f"Extracted {len(list(rows))} potential conferences")
+```
+
+**Testing the ACL Scraper:**
+```bash
+# Run with output
+scrapy crawl acl_web -o acl.json
+
+# Run tests
+pytest tests/test_acl_web_scraper.py -v
+
+# Check results
+python -c "import json; data = json.load(open('acl.json')); print(f'{len(data)} conferences, {sum(1 for c in data if c[\"deadlines\"])} with deadlines')"
+```
+
+### 4. Handling Pagination
 
 ```python
 def parse(self, response: Response) -> Iterator[ConferenceItem]:

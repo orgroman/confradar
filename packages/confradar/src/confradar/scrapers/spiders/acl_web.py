@@ -3,8 +3,9 @@
 Scrapes conference listings from ACL (Association for Computational Linguistics).
 """
 from datetime import datetime, timezone
-from typing import Iterator
+from typing import Any, Iterator
 import re
+import hashlib
 
 import scrapy
 from scrapy.http import Response
@@ -17,6 +18,14 @@ class ACLWebSpider(scrapy.Spider):
     
     Source: https://www.aclweb.org/portal/acl_sponsored_events
     
+    The page displays events in a table with columns:
+    - Title (with link to detail page)
+    - Location
+    - City
+    - Country
+    - Submission Deadline
+    - Event Dates
+    
     Usage:
         scrapy crawl acl_web -o acl_conferences.json
     """
@@ -27,53 +36,136 @@ class ACLWebSpider(scrapy.Spider):
     
     custom_settings = {
         "DOWNLOAD_DELAY": 2,
+        "COOKIES_ENABLED": True,
+        "COOKIES_DEBUG": True,
+        "HTTPCACHE_ENABLED": False,  # Disable cache to avoid 409 issues
+        "DEFAULT_REQUEST_HEADERS": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        },
     }
+    
+    def start_requests(self):
+        """Start requests with the required cookie."""
+        for url in self.start_urls:
+            yield scrapy.Request(
+                url,
+                cookies={"humans_21909": "1"},
+                callback=self.parse,
+            )
     
     def parse(self, response: Response) -> Iterator[ConferenceItem]:
         """Parse ACL events page."""
         self.logger.info(f"Parsing {response.url}")
         
-        # ACL lists events in a structured format
-        # Look for conference entries (adjust selectors based on actual HTML)
-        for event in response.css('.event-item, article.event, div.conference'):
-            name = event.css('h2::text, h3::text, .title::text').get('')
-            if not name:
+        # Find the main table
+        table = response.css('table').get()
+        if not table:
+            self.logger.warning("No table found on page")
+            return
+        
+        # Parse table rows (skip header row)
+        rows = response.css('table tr')[1:]  # Skip header
+        self.logger.info(f"Found {len(rows)} event rows")
+        
+        for row in rows:
+            cells = row.css('td')
+            if len(cells) < 6:
+                self.logger.debug(f"Skipping row with {len(cells)} cells (need 6)")
                 continue
-                
-            name = name.strip()
             
-            # Extract year from name or date fields
+            # Extract title and link
+            title_cell = cells[0]
+            # Get all text content from the cell (including nested elements)
+            name = ' '.join(title_cell.css('*::text, ::text').getall()).strip()
+            if not name:
+                self.logger.debug("Skipping row with empty name")
+                continue
+            
+            # Detail page link (may have more info)
+            detail_link = title_cell.css('a::attr(href)').get()
+            if detail_link and not detail_link.startswith('http'):
+                detail_link = response.urljoin(detail_link)
+            
+            # Extract location info
+            location = ' '.join(cells[1].css('*::text, ::text').getall()).strip()
+            city = ' '.join(cells[2].css('*::text, ::text').getall()).strip()
+            country = ' '.join(cells[3].css('*::text, ::text').getall()).strip()
+            
+            # Extract submission deadline (column 4)
+            deadline_text = ' '.join(cells[4].css('*::text, ::text').getall()).strip()
+            
+            # Extract event dates (column 5)
+            event_dates_text = ' '.join(cells[5].css('*::text, ::text').getall()).strip()
+            
+            # Extract year from name or event dates
             year = self._extract_year(name)
             if not year:
-                # Try date fields
-                date_text = event.css('.date::text, .event-date::text').get('')
-                year = self._extract_year(date_text)
-            
-            # Extract homepage URL
-            homepage = event.css('a[href*="http"]::attr(href)').get()
-            if homepage and 'aclweb.org' not in homepage:
-                # External link is likely the conference homepage
-                pass
-            else:
-                homepage = None
+                year = self._extract_year(event_dates_text)
             
             # Generate key
             key = self._generate_key(name, year)
             
-            if key and name:
-                yield ConferenceItem(
-                    key=key,
-                    name=name,
-                    year=year,
-                    homepage=homepage,
-                    deadlines=[],
-                    source=self.name,
-                    scraped_at=datetime.now(timezone.utc).isoformat(),
-                    url=response.url,
-                )
-                self.logger.debug(f"Found: {name}")
+            self.logger.debug(f"Processing: name={name[:50]}, year={year}, key={key}")
+            
+            if not key or not name:
+                self.logger.warning(f"Skipping conference with invalid key or name: key={key}, name={name[:50]}")
+                continue
+            
+            # Build deadlines list
+            deadlines: list[dict[str, Any]] = []
+            
+            if deadline_text:
+                # Parse deadline (format: "15 May 2025" or "2 Jun 2025")
+                deadline_dt = self._parse_date(deadline_text)
+                if deadline_dt:
+                    deadlines.append({
+                        "kind": "submission",
+                        "due_date": deadline_dt.date(),
+                        "timezone": "AoE",  # ACL typically uses AoE
+                    })
+            
+            # Try to extract homepage from location or detail link
+            homepage = None
+            if detail_link and 'aclweb.org' in detail_link:
+                # Detail page is internal; homepage might be extracted later
+                homepage = None
+            elif detail_link:
+                homepage = detail_link
+            
+            yield ConferenceItem(
+                key=key,
+                name=name,
+                year=year,
+                homepage=homepage,
+                deadlines=deadlines,
+                source=self.name,
+                scraped_at=datetime.now(timezone.utc).isoformat(),
+                url=response.url,
+            )
+            self.logger.debug(f"Found: {name} (deadlines: {len(deadlines)})")
         
         self.logger.info(f"Finished parsing {response.url}")
+    
+    def _parse_date(self, date_str: str) -> datetime | None:
+        """Parse date string like '15 May 2025' or '2 Jun 2025'."""
+        if not date_str:
+            return None
+        
+        # Try common formats
+        formats = [
+            "%d %b %Y",  # 15 May 2025
+            "%d %B %Y",  # 15 May 2025 (full month)
+            "%Y-%m-%d",  # 2025-05-15
+        ]
+        
+        for fmt in formats:
+            try:
+                return datetime.strptime(date_str.strip(), fmt).replace(tzinfo=timezone.utc)
+            except ValueError:
+                continue
+        
+        self.logger.debug(f"Could not parse date: {date_str}")
+        return None
     
     def _extract_year(self, text: str) -> int | None:
         """Extract 4-digit year from text."""
@@ -87,13 +179,20 @@ class ACLWebSpider(scrapy.Spider):
         # Extract acronym (uppercase letters/numbers)
         acronym = re.findall(r'[A-Z0-9]+', name)
         if acronym:
-            key = acronym[0].lower()
+            # Use longest acronym to avoid single-letter keys
+            key = max(acronym, key=len).lower()
         else:
-            # Fallback: first word
-            words = re.findall(r'\w+', name)
-            key = words[0].lower() if words else 'unknown'
+            # Fallback: first significant word (skip common words)
+            words = re.findall(r'\w+', name.lower())
+            skip_words = {'the', 'a', 'an', 'on', 'for', 'of', 'in', 'at', 'to'}
+            significant_words = [w for w in words if w not in skip_words and len(w) > 2]
+            key = significant_words[0] if significant_words else (words[0] if words else 'unknown')
         
         if year:
             key += str(year)[-2:]  # Last 2 digits
+        else:
+            # No year available - add a short hash suffix to ensure uniqueness
+            name_hash = hashlib.md5(name.encode()).hexdigest()[:4]
+            key += f"_{name_hash}"
         
         return key
