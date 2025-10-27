@@ -70,14 +70,39 @@ docker compose exec -T postgres psql -U confradar -d confradar < backup.sql
 
 - Format: black
 - Lint: ruff
+- Type check: mypy
 - Tests: pytest (+ pytest-cov)
 
 ```powershell
 cd packages/confradar
-uv run ruff check
+
+# Lint code
+uv run ruff check src tests
+
+# Auto-fix linting issues
+uv run ruff check --fix src tests
+
+# Check formatting
 uv run black --check src tests
+
+# Auto-format code
+uv run black src tests
+
+# Type checking
+uv run mypy src --ignore-missing-imports
+
+# Run tests
 uv run pytest -q
 ```
+
+### Code Quality Status
+
+Current known issues (tracked in #86):
+- 99 ruff linting errors (mostly deprecated type hints)
+- 17 files need black formatting
+- Some mypy type hints can be improved
+
+These will be systematically fixed, after which the code quality CI checks will be made mandatory.
 
 ## CI/CD
 
@@ -95,6 +120,29 @@ uv run pytest -q
   - 🟡 Orange: 45-60%
   - 🔴 Red: <45%
 - **Reports**: HTML coverage report available as downloadable artifact
+
+### Code Quality CI
+- **Triggers**: PRs to main
+- **Checks**:
+  - **Ruff**: Linting (import order, deprecated types, unused imports, etc.)
+  - **Black**: Code formatting verification
+  - **Mypy**: Static type checking
+- **Status**: Currently in reporting mode (`continue-on-error: true`)
+- **Note**: All checks will be made mandatory after #86 (code quality improvements) is merged
+
+### Security CI
+- **Triggers**: PRs to main + weekly schedule (Sundays)
+- **Checks**:
+  - **Bandit**: Security vulnerability scanning in code
+  - **Safety**: Dependency vulnerability checks
+  - **detect-secrets**: Secret scanning to prevent credential leaks
+- **Status**: Reporting mode (won't fail PRs, provides visibility)
+
+### Dependency Review CI
+- **Triggers**: PRs that modify `pyproject.toml` or `uv.lock`
+- **Action**: Reviews dependency changes for known vulnerabilities
+- **Behavior**: Fails on moderate+ severity vulnerabilities
+- **Status**: Active and enforced
 
 ### Running tests locally
 
@@ -117,8 +165,10 @@ uv run pytest --ignore=tests/test_integration_scrapers.py
 ### Known CI Issues
 - **#83**: Integration tests fail due to Scrapy reactor issue (skipped in CI)
 - **#84**: Database tests need PostgreSQL service (skipped in CI)
+- **#86**: Code quality improvements needed (ruff/black/mypy issues)
 
 Once #84 is resolved, coverage threshold can be raised to 50%+.
+Once #86 is resolved, code quality checks will become mandatory.
 
 ## Branch Protection
 
