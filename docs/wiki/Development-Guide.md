@@ -97,12 +97,12 @@ uv run pytest -q
 
 ### Code Quality Status
 
-Current known issues (tracked in #86):
-- 99 ruff linting errors (mostly deprecated type hints)
-- 17 files need black formatting
-- Some mypy type hints can be improved
+All code quality checks now passing:
+- ✅ Ruff linting: 0 errors (fixed 112 deprecated type hints, imports, unused vars)
+- ✅ Black formatting: All files formatted
+- ✅ Bandit security: No issues (MD5 usage marked as non-security with #nosec)
 
-These will be systematically fixed, after which the code quality CI checks will be made mandatory.
+Code quality CI checks are now **mandatory** for PR merges (enforced since #86 resolved).
 
 ## CI/CD
 
@@ -114,21 +114,22 @@ These will be systematically fixed, after which the code quality CI checks will 
 
 ### Coverage CI
 - **Triggers**: PRs to main
-- **Minimum coverage**: 45% (fails below)
+- **Minimum coverage**: 55% (fails below) - raised from 45% after #84 and #86
 - **Thresholds**:
   - 🟢 Green: 60%+
-  - 🟡 Orange: 45-60%
-  - 🔴 Red: <45%
+  - 🟡 Orange: 55-60%
+  - 🔴 Red: <55%
 - **Reports**: HTML coverage report available as downloadable artifact
+- **Current baseline**: 57% (with database tests enabled)
 
 ### Code Quality CI
 - **Triggers**: PRs to main
 - **Checks**:
   - **Ruff**: Linting (import order, deprecated types, unused imports, etc.)
   - **Black**: Code formatting verification
-  - **Mypy**: Static type checking
-- **Status**: Currently in reporting mode (`continue-on-error: true`)
-- **Note**: All checks will be made mandatory after #86 (code quality improvements) is merged
+  - **Mypy**: Static type checking (reporting mode for now)
+- **Status**: ✅ **Mandatory** - Ruff and Black checks must pass for PR merge (#86 resolved)
+- **Note**: Mypy remains in reporting mode (continue-on-error) until type coverage improves
 
 ### Security CI
 - **Triggers**: PRs to main + weekly schedule (Sundays)
@@ -168,9 +169,6 @@ uv run pytest --ignore=tests/test_integration_scrapers.py
   - Scrapy's Twisted reactor can only run once per Python process
   - Tests can be run individually: `uv run pytest tests/test_integration_scrapers.py::test_ai_deadlines_spider_real -v`
   - Future: Convert to unit tests with mocked responses or use pytest-twisted
-
-Once #84 is resolved, coverage threshold can be raised to 50%+.
-Once #86 is resolved, code quality checks will become mandatory.
 
 ## Branch Protection
 

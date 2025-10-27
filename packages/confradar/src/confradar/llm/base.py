@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from .types import LLMResponse
 
@@ -12,8 +12,8 @@ class LLMClient(ABC):
         self,
         prompt: str,
         *,
-        system: Optional[str] = None,
-        model: Optional[str] = None,
+        system: str | None = None,
+        model: str | None = None,
         max_tokens: int = 512,
         temperature: float = 0.0,
         **kwargs: Any,

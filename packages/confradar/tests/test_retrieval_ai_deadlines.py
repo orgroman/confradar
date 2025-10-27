@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import httpx
-import pytest
 
 from confradar.scrapers.ai_deadlines import AIDeadlinesScraper
 
@@ -20,7 +19,7 @@ def test_scraper_parses_html():
 
     scraper = AIDeadlinesScraper()
     result = scraper.parse(sample_html)
-    
+
     assert len(result) >= 2
     conf_keys = {c["key"] for c in result}
     assert "icml25" in conf_keys
@@ -62,7 +61,7 @@ def test_scraper_with_mocked_http(monkeypatch):
 
     scraper = AIDeadlinesScraper("https://example.com")
     result = scraper.scrape()
-    
+
     assert result.source_name == "aideadlines"
     assert result.schema_version == "1.0"
     assert len(result.normalized) >= 1

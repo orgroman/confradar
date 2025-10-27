@@ -55,9 +55,11 @@ def test_unique_constraints(tmp_path):
         session.add(c)
         session.flush()
 
-        session.add_all([
-            Deadline(conference_id=c.id, kind="submission", due_date=date(2025, 1, 1)),
-        ])
+        session.add_all(
+            [
+                Deadline(conference_id=c.id, kind="submission", due_date=date(2025, 1, 1)),
+            ]
+        )
         session.commit()
 
         # Insert duplicate deadline should violate unique constraint

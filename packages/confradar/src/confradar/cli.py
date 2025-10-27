@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import List
 
 import httpx
 
@@ -48,7 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: List[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     ns = parser.parse_args(argv)
     return ns.func(ns)

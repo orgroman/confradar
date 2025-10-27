@@ -2,17 +2,17 @@
 
 This module defines all Dagster assets, jobs, schedules, and sensors for ConfRadar.
 """
+
 from dagster import Definitions, ScheduleDefinition, define_asset_job
 
 from confradar.dagster.assets.scrapers import (
-    ai_deadlines_conferences,
     acl_web_conferences,
+    ai_deadlines_conferences,
     chairing_tool_conferences,
     elra_conferences,
     wikicfp_conferences,
 )
 from confradar.dagster.assets.storage import store_conferences
-
 
 # Define jobs
 crawl_job = define_asset_job(

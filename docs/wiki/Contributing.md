@@ -19,23 +19,21 @@ uv run pytest -q
 
 All pull requests are checked by multiple CI workflows:
 
-### Required Checks
+### Required Checks (Must Pass)
 - **Tests**: All unit tests must pass (Ubuntu CI)
-- **Coverage**: Minimum 45% code coverage required
-  - Current baseline: ~48%
-  - Orange zone: 45-60% (warning)
+- **Coverage**: Minimum 55% code coverage required (raised from 45% after #84 and #86)
+  - Current baseline: 57%
+  - Orange zone: 55-60% (warning)
   - Green zone: 60%+ (good)
+- **Ruff**: Code linting must pass (no deprecated types, proper imports, no unused vars)
+- **Black**: Code formatting must pass (all files properly formatted)
 
 ### Quality Checks (Reporting Mode)
 The following checks currently run in reporting mode (won't block PRs):
-- **Ruff**: Code linting (import order, deprecated types, unused imports)
-- **Black**: Code formatting verification
-- **Mypy**: Static type checking
+- **Mypy**: Static type checking (will be enforced after type coverage improves)
 - **Bandit**: Security vulnerability scanning
 - **Safety**: Dependency vulnerability checks
 - **detect-secrets**: Secret scanning
-
-These will become mandatory after #86 (code quality improvements) is merged.
 
 ### Dependency Review (Enforced)
 - **Dependency Review**: Fails if new dependencies have moderate+ severity vulnerabilities

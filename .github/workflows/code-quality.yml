@@ -31,19 +31,17 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run ruff (linter)
-        continue-on-error: true  # Report issues without failing (strict after #86)
         run: |
           cd packages/confradar
           uv run ruff check src tests
 
       - name: Run black (format check)
-        continue-on-error: true  # Report issues without failing (strict after #86)
         run: |
           cd packages/confradar
           uv run black --check src tests
 
       - name: Run mypy (type checking)
-        continue-on-error: true  # Report issues without failing (strict after #86)
+        continue-on-error: true  # Report issues without failing (strict after type hints improved)
         run: |
           cd packages/confradar
           uv run mypy src --ignore-missing-imports

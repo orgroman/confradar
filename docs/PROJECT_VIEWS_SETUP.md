@@ -2,7 +2,7 @@
 
 **Project:** https://github.com/users/orgroman/projects/6  
 **Current State:** Single default view  
-**Goal:** Create 7 organized views for sprint planning and progress tracking
+**Goal:** Create 10 organized views for sprint planning, quality gates, and progress tracking
 
 ---
 
@@ -156,6 +156,54 @@
 
 ---
 
+### 8. ✅ **CI & Quality Gates** (Table - Infra + PR focus)
+
+**Purpose:** Surface CI failures, coverage gates, and infra issues in one place
+
+**Setup:**
+1. New view → "CI & Quality Gates"
+2. Layout: **Table**
+3. Filters (start with any of these, adjust as labels evolve):
+   - `label:area:infra`
+   - `label:type:bug label:area:infra`
+   - `is:pr`
+4. Visible columns:
+   - Title, Status, Priority, Labels, Assignees, Updated
+   - Consider adding custom field: "CI Status" (Manual: Pass/Fail/Skip)
+
+**Sort:** Updated (most recent first)
+
+---
+
+### 9. 🧭 **Scrapers Progress** (Board - Source components)
+
+**Purpose:** Track progress on each scraper/source component
+
+**Setup:**
+1. New view → "Scrapers Progress"
+2. Layout: **Board**
+3. Group by: **Component** (custom field – see below)
+4. Filter: `label:area:retrieval`
+
+**Columns (Component options):**
+- AIDeadlines | ACL Web | ChairingTool | ELRA | WikiCFP | Other
+
+---
+
+### 10. 🛠️ **Infra P0/P1** (Table - Critical infra/testing)
+
+**Purpose:** Keep the highest-priority infra/testing work front-and-center
+
+**Setup:**
+1. New view → "Infra P0/P1"
+2. Layout: **Table**
+3. Filter: `label:area:infra label:priority:P0,priority:P1`
+4. Visible columns: Title, Status, Priority, Assignees, Updated
+
+**Sort:** Priority (P0 first) → Updated (desc)
+
+---
+
 ## Quick Setup Steps
 
 ### Step 1: Access Project Settings
@@ -192,6 +240,14 @@ Add these custom fields to track additional metadata:
 - Type: Single select
 - Options: Sprint 1, Sprint 2, Sprint 3, etc.
 
+**Component (for Scrapers Progress view):**
+- Type: Single select
+- Options: AIDeadlines, ACL Web, ChairingTool, ELRA, WikiCFP, Other
+
+**CI Status (manual for now):**
+- Type: Single select
+- Options: Pass, Fail, Skip
+
 To add custom fields:
 1. Settings → Custom fields → "New field"
 2. Configure as above
@@ -214,11 +270,13 @@ To add custom fields:
 ### Stakeholder Updates
 - **Progress:** "Roadmap" view
 - **Critical issues:** "MVP Critical Path" view
+ - **Quality/Infra:** "CI & Quality Gates" view
 
 ### Team Coordination
 - **Backend team:** Filter "By Area" to area:retrieval, area:extraction, area:kb
 - **DevOps team:** Filter to area:infra
 - **ML team:** Filter to area:extraction, area:clustering
+ - **Scrapers team:** Use "Scrapers Progress" view (grouped by Component)
 
 ---
 
@@ -251,6 +309,11 @@ label:type:bug
 label:type:task,type:feature
 ```
 
+**By PRs:**
+```
+is:pr
+```
+
 **By Status:**
 ```
 status:"In Progress"
@@ -265,6 +328,9 @@ label:priority:P0,priority:P1 milestone:M1,M2 -status:Done
 
 label:area:infra status:"Backlog","Ready"
 (Infrastructure work ready to start)
+
+is:pr status:"In Review"
+(PRs currently under review)
 ```
 
 ---
@@ -280,6 +346,9 @@ label:area:infra status:"Backlog","Ready"
 | By Area | Assignment | Board | Group by area labels |
 | MVP Critical Path | Leadership | Table | P0/P1, M1-M5 |
 | Current Sprint | Standup | Table | In Progress/Review |
+| CI & Quality Gates | Quality/Infra | Table | area:infra, is:pr |
+| Scrapers Progress | Component tracking | Board | area:retrieval, grouped by Component |
+| Infra P0/P1 | Critical infra | Table | area:infra + priority:P0,P1 |
 
 ---
 
@@ -300,6 +369,11 @@ When PR linked to issue is opened, move to "In Review" status
 Weekly: Generate report of completed issues per sprint
 
 (These require GitHub Actions - can provide examples if needed)
+
+### Optional future automation for Projects
+- Sync CI status to "CI Status" field on linked items/PRs
+- Auto-set "Component" based on title keywords (ACL/ELRA/etc.) or labels
+- Auto-move items to "In Review" when PR opened; to "Done" when PR merged
 
 ---
 

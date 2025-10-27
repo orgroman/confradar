@@ -1,12 +1,13 @@
 """Unit tests for AI Deadlines scraper deadline extraction."""
+
 import pytest
-from datetime import datetime
+
 from confradar.scrapers.ai_deadlines import AIDeadlinesScraper
 
 
 class TestAIDeadlinesScraperParsing:
     """Test the parsing logic of AI Deadlines scraper."""
-    
+
     def test_parse_basic_conference_html(self):
         """Test parsing basic conference information from HTML."""
         html = """
@@ -17,17 +18,17 @@ class TestAIDeadlinesScraperParsing:
         </body>
         </html>
         """
-        
+
         scraper = AIDeadlinesScraper()
         result = scraper.parse(html)
-        
+
         assert len(result) == 1
         conf = result[0]
-        assert conf['key'] == 'icml25'
-        assert conf['name'] == 'ICML 2025'
-        assert conf['year'] == 2025
-        assert conf['homepage'] == 'https://icml.cc'
-    
+        assert conf["key"] == "icml25"
+        assert conf["name"] == "ICML 2025"
+        assert conf["year"] == 2025
+        assert conf["homepage"] == "https://icml.cc"
+
     def test_parse_conference_with_deadline(self):
         """Test parsing conference with JavaScript deadline."""
         html = """
@@ -42,20 +43,20 @@ class TestAIDeadlinesScraperParsing:
         </script>
         </html>
         """
-        
+
         scraper = AIDeadlinesScraper()
         result = scraper.parse(html)
-        
+
         assert len(result) == 1
         conf = result[0]
-        assert conf['key'] == 'neurips24'
-        assert len(conf['deadlines']) == 1
-        
-        deadline = conf['deadlines'][0]
-        assert deadline['kind'] == 'submission'
-        assert deadline['due_at'] == '2024-05-15T23:59:59'
-        assert deadline['timezone'] == 'UTC-12'
-    
+        assert conf["key"] == "neurips24"
+        assert len(conf["deadlines"]) == 1
+
+        deadline = conf["deadlines"][0]
+        assert deadline["kind"] == "submission"
+        assert deadline["due_at"] == "2024-05-15T23:59:59"
+        assert deadline["timezone"] == "UTC-12"
+
     def test_parse_deadline_without_seconds(self):
         """Test parsing deadline in HH:MM format (no seconds)."""
         html = """
@@ -70,15 +71,15 @@ class TestAIDeadlinesScraperParsing:
         </script>
         </html>
         """
-        
+
         scraper = AIDeadlinesScraper()
         result = scraper.parse(html)
-        
+
         assert len(result) == 1
-        deadline = result[0]['deadlines'][0]
-        assert deadline['due_at'] == '2024-09-11T23:59:00'
-        assert deadline['timezone'] == 'UTC-12'
-    
+        deadline = result[0]["deadlines"][0]
+        assert deadline["due_at"] == "2024-09-11T23:59:00"
+        assert deadline["timezone"] == "UTC-12"
+
     def test_deduplication_of_conferences(self):
         """Test that duplicate conference entries are deduplicated."""
         html = """
@@ -89,14 +90,14 @@ class TestAIDeadlinesScraperParsing:
         </body>
         </html>
         """
-        
+
         scraper = AIDeadlinesScraper()
         result = scraper.parse(html)
-        
+
         # Should only have one conference despite two links
         assert len(result) == 1
-        assert result[0]['key'] == 'acl25'
-    
+        assert result[0]["key"] == "acl25"
+
     def test_year_extraction_from_key(self):
         """Test extracting year from conference key."""
         html = """
@@ -108,16 +109,16 @@ class TestAIDeadlinesScraperParsing:
         </body>
         </html>
         """
-        
+
         scraper = AIDeadlinesScraper()
         result = scraper.parse(html)
-        
+
         # Check year extraction
-        years_by_key = {c['key']: c['year'] for c in result}
-        assert years_by_key['cvpr25'] == 2025
-        assert years_by_key['emnlp24'] == 2024
-        assert years_by_key['icml99'] == 1999  # 99 -> 1999 (< 50 cutoff)
-    
+        years_by_key = {c["key"]: c["year"] for c in result}
+        assert years_by_key["cvpr25"] == 2025
+        assert years_by_key["emnlp24"] == 2024
+        assert years_by_key["icml99"] == 1999  # 99 -> 1999 (< 50 cutoff)
+
     def test_multiple_conferences_with_deadlines(self):
         """Test parsing multiple conferences with different deadlines."""
         html = """
@@ -137,22 +138,22 @@ class TestAIDeadlinesScraperParsing:
         </script>
         </html>
         """
-        
+
         scraper = AIDeadlinesScraper()
         result = scraper.parse(html)
-        
+
         assert len(result) == 2
-        
+
         # Check both conferences have deadlines
-        conf1 = next(c for c in result if c['key'] == 'conf1')
-        conf2 = next(c for c in result if c['key'] == 'conf2')
-        
-        assert len(conf1['deadlines']) == 1
-        assert len(conf2['deadlines']) == 1
-        
-        assert conf1['deadlines'][0]['timezone'] == 'UTC-12'
-        assert conf2['deadlines'][0]['timezone'] == 'GMT'
-    
+        conf1 = next(c for c in result if c["key"] == "conf1")
+        conf2 = next(c for c in result if c["key"] == "conf2")
+
+        assert len(conf1["deadlines"]) == 1
+        assert len(conf2["deadlines"]) == 1
+
+        assert conf1["deadlines"][0]["timezone"] == "UTC-12"
+        assert conf2["deadlines"][0]["timezone"] == "GMT"
+
     def test_ignore_invalid_dates(self):
         """Test that invalid dates are skipped gracefully."""
         html = """
@@ -167,13 +168,13 @@ class TestAIDeadlinesScraperParsing:
         </script>
         </html>
         """
-        
+
         scraper = AIDeadlinesScraper()
         result = scraper.parse(html)
-        
+
         assert len(result) == 1
-        assert len(result[0]['deadlines']) == 0  # Invalid date should be skipped
-    
+        assert len(result[0]["deadlines"]) == 0  # Invalid date should be skipped
+
     def test_scrape_integration(self, monkeypatch):
         """Test the full scrape() method with mocked HTTP."""
         sample_html = """
@@ -188,70 +189,75 @@ class TestAIDeadlinesScraperParsing:
         </script>
         </html>
         """
-        
+
         class FakeResponse:
             def __init__(self):
                 self.text = sample_html
+
             def raise_for_status(self):
                 pass
-        
+
         class FakeClient:
             def __init__(self, *args, **kwargs):
                 pass
+
             def __enter__(self):
                 return self
+
             def __exit__(self, *args):
                 pass
+
             def get(self, url, **kwargs):
                 return FakeResponse()
-        
+
         import httpx
+
         monkeypatch.setattr(httpx, "Client", FakeClient)
-        
+
         scraper = AIDeadlinesScraper()
         result = scraper.scrape()
-        
+
         assert result.source_name == "aideadlines"
         assert result.schema_version == "1.0"
         assert len(result.normalized) == 1
-        
+
         conf = result.normalized[0]
-        assert conf['key'] == 'test25'
-        assert conf['name'] == 'Test Conference 2025'
-        assert len(conf['deadlines']) == 1
+        assert conf["key"] == "test25"
+        assert conf["name"] == "Test Conference 2025"
+        assert len(conf["deadlines"]) == 1
 
 
 class TestAIDeadlinesScraperValidation:
     """Test validation logic."""
-    
+
     def test_validate_requires_key_and_name(self):
         """Test that validation requires key and name fields."""
         scraper = AIDeadlinesScraper()
-        
+
         # Valid item
-        valid = [{'key': 'test', 'name': 'Test', 'deadlines': []}]
+        valid = [{"key": "test", "name": "Test", "deadlines": []}]
         scraper.validate(valid)  # Should not raise
-        
+
         # Missing key
         with pytest.raises(ValueError, match="Missing key/name"):
-            scraper.validate([{'name': 'Test', 'deadlines': []}])
-        
+            scraper.validate([{"name": "Test", "deadlines": []}])
+
         # Missing name
         with pytest.raises(ValueError, match="Missing key/name"):
-            scraper.validate([{'key': 'test', 'deadlines': []}])
-    
+            scraper.validate([{"key": "test", "deadlines": []}])
+
     def test_validate_requires_deadlines_list(self):
         """Test that deadlines must be a list."""
         scraper = AIDeadlinesScraper()
-        
+
         # Valid
-        valid = [{'key': 'test', 'name': 'Test', 'deadlines': []}]
+        valid = [{"key": "test", "name": "Test", "deadlines": []}]
         scraper.validate(valid)  # Should not raise
-        
+
         # Invalid deadlines type
         with pytest.raises(ValueError, match="Invalid deadlines field"):
-            scraper.validate([{'key': 'test', 'name': 'Test', 'deadlines': 'invalid'}])
-        
+            scraper.validate([{"key": "test", "name": "Test", "deadlines": "invalid"}])
+
         # Missing deadlines
         with pytest.raises(ValueError, match="Invalid deadlines field"):
-            scraper.validate([{'key': 'test', 'name': 'Test'}])
+            scraper.validate([{"key": "test", "name": "Test"}])
