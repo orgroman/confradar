@@ -1,0 +1,49 @@
+name: Code Quality
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        shell: bash
+        run: |
+          curl -fsSL https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Verify uv
+        run: uv --version
+
+      - name: Sync workspace deps (dev extras)
+        run: uv sync --extra dev
+
+      - name: Run ruff (linter)
+        continue-on-error: true  # Report issues without failing (strict after #86)
+        run: |
+          cd packages/confradar
+          uv run ruff check src tests
+
+      - name: Run black (format check)
+        continue-on-error: true  # Report issues without failing (strict after #86)
+        run: |
+          cd packages/confradar
+          uv run black --check src tests
+
+      - name: Run mypy (type checking)
+        continue-on-error: true  # Report issues without failing (strict after #86)
+        run: |
+          cd packages/confradar
+          uv run mypy src --ignore-missing-imports

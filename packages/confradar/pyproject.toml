@@ -68,3 +68,10 @@ markers = [
 
 [tool.uv]
 package = true
+
+[dependency-groups]
+dev = [
+    "bandit>=1.8.6",
+    "detect-secrets>=1.5.0",
+    "safety>=3.6.2",
+]
