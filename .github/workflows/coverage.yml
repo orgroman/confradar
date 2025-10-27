@@ -9,6 +9,21 @@ jobs:
     name: Test Coverage
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: confradar
+          POSTGRES_PASSWORD: confradar
+          POSTGRES_DB: confradar_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,18 +46,19 @@ jobs:
         run: uv sync --extra dev
 
       - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql+psycopg://confradar:confradar@localhost:5432/confradar_test
         run: |
           cd packages/confradar
           # Skip integration tests due to Scrapy reactor issue (see #83)
-          # Skip database tests until PostgreSQL service added (see #84)
+          # Database tests now enabled with PostgreSQL service (#84 resolved)
           uv run pytest \
             --cov=src/confradar \
             --cov-report=term-missing \
             --cov-report=xml \
             --cov-report=html \
             --cov-fail-under=45 \
-            --ignore=tests/test_integration_scrapers.py \
-            --ignore=tests/test_database_pipeline.py
+            --ignore=tests/test_integration_scrapers.py
 
       - name: Upload coverage HTML
         uses: actions/upload-artifact@v4

@@ -15,6 +15,21 @@ jobs:
       matrix:
         python-version: ["3.11"]
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: confradar
+          POSTGRES_PASSWORD: confradar
+          POSTGRES_DB: confradar_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,8 +55,10 @@ jobs:
 
       - name: Run tests
         shell: bash
+        env:
+          DATABASE_URL: postgresql+psycopg://confradar:confradar@localhost:5432/confradar_test
         run: |
           cd packages/confradar
           # Skip integration tests due to Scrapy reactor issue (see #83)
-          # Skip database tests until PostgreSQL service added (see #84)
-          uv run pytest -q --ignore=tests/test_integration_scrapers.py --ignore=tests/test_database_pipeline.py
+          # Database tests now enabled with PostgreSQL service (#84 resolved)
+          uv run pytest -q --ignore=tests/test_integration_scrapers.py
