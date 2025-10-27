@@ -44,23 +44,6 @@ jobs:
             --ignore=tests/test_integration_scrapers.py \
             --ignore=tests/test_database_pipeline.py
 
-      - name: Coverage comment
-        uses: py-cov-action/python-coverage-comment-action@v3
-        with:
-          GITHUB_TOKEN: ${{ github.token }}
-          MINIMUM_GREEN: 60
-          MINIMUM_ORANGE: 45
-
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./packages/confradar/coverage.xml
-          flags: unittests
-          name: codecov-confradar
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
       - name: Upload coverage HTML
         uses: actions/upload-artifact@v4
         if: always()
