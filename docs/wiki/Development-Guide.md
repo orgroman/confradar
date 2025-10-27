@@ -79,9 +79,53 @@ uv run black --check src tests
 uv run pytest -q
 ```
 
-## CI
+## CI/CD
 
-GitHub Actions runs uv sync and tests on Windows and Ubuntu for pull requests.
+### Main CI (Tests)
+- **Triggers**: Push to main, PRs to main
+- **Runs on**: Ubuntu (Python 3.11)
+- **Tests**: All unit tests (skips integration + database tests)
+- **Required**: Must pass for PR merge
+
+### Coverage CI
+- **Triggers**: PRs to main
+- **Minimum coverage**: 45% (fails below)
+- **Thresholds**:
+  - 🟢 Green: 60%+
+  - 🟡 Orange: 45-60%
+  - 🔴 Red: <45%
+- **Reports**: HTML coverage report available as downloadable artifact
+
+### Running tests locally
+
+```powershell
+cd packages/confradar
+
+# Quick test run
+uv run pytest -q
+
+# With coverage
+uv run pytest --cov=src/confradar --cov-report=term-missing
+
+# Specific test file
+uv run pytest tests/test_acl_web_scraper.py -v
+
+# Skip slow tests
+uv run pytest --ignore=tests/test_integration_scrapers.py
+```
+
+### Known CI Issues
+- **#83**: Integration tests fail due to Scrapy reactor issue (skipped in CI)
+- **#84**: Database tests need PostgreSQL service (skipped in CI)
+
+Once #84 is resolved, coverage threshold can be raised to 50%+.
+
+## Branch Protection
+
+Main branch is protected:
+- ✅ Requires "Tests (uv) (3.11)" check to pass
+- ✅ Cannot merge PRs with failing tests
+- ✅ Ensures code quality and prevents regressions
 
 ## Notes
 

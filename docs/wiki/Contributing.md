@@ -15,6 +15,17 @@ cd packages/confradar
 uv run pytest -q
 ```
 
+## CI Requirements
+
+All pull requests must pass:
+- **Tests**: All unit tests must pass (Ubuntu CI)
+- **Coverage**: Minimum 45% code coverage required
+  - Current baseline: ~48%
+  - Orange zone: 45-60% (warning)
+  - Green zone: 60%+ (good)
+
+Note: Integration tests (#83) and database tests (#84) are currently skipped in CI due to known issues.
+
 ## Docs and Wiki
 
 - Edit docs under `docs/wiki/` in the main repo. They auto-sync to the GitHub Wiki on push to `main`.
