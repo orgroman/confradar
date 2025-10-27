@@ -56,7 +56,7 @@ uv run black --check src tests
 uv run mypy src --ignore-missing-imports
 ```
 
-Note: Integration tests (#83) and database tests (#84) are currently skipped in CI due to known issues.
+Note: Integration tests (#83) are skipped in CI due to Scrapy reactor limitations and network dependencies. Database tests now run with PostgreSQL service (#84 resolved).
 
 ## Docs and Wiki
 

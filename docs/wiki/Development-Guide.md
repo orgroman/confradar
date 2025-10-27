@@ -163,9 +163,11 @@ uv run pytest --ignore=tests/test_integration_scrapers.py
 ```
 
 ### Known CI Issues
-- **#83**: Integration tests fail due to Scrapy reactor issue (skipped in CI)
-- **#84**: Database tests need PostgreSQL service (skipped in CI)
-- **#86**: Code quality improvements needed (ruff/black/mypy issues)
+- **#83**: Integration tests skipped (Scrapy reactor limitation + network flakiness)
+  - Integration tests use live websites (network-dependent, can break if sites change)
+  - Scrapy's Twisted reactor can only run once per Python process
+  - Tests can be run individually: `uv run pytest tests/test_integration_scrapers.py::test_ai_deadlines_spider_real -v`
+  - Future: Convert to unit tests with mocked responses or use pytest-twisted
 
 Once #84 is resolved, coverage threshold can be raised to 50%+.
 Once #86 is resolved, code quality checks will become mandatory.
