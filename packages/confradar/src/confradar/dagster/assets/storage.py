@@ -4,6 +4,7 @@ These assets take scraped conference data and persist it to the database
 using SQLAlchemy models.
 """
 
+import time
 from typing import Any
 
 from dagster import MetadataValue, Output, asset
@@ -34,6 +35,7 @@ def store_conferences(
     Returns:
         Dictionary with statistics about stored conferences
     """
+    start_time = time.time()
     settings = get_settings()
 
     # Create database engine and session
@@ -111,6 +113,9 @@ def store_conferences(
         # Commit all changes
         session.commit()
 
+        execution_time = time.time() - start_time
+        conferences_per_second = len(all_conferences) / execution_time if execution_time > 0 else 0
+
         stats = {
             "total_scraped": len(all_conferences),
             "new_conferences": new_count,
@@ -124,6 +129,8 @@ def store_conferences(
                 "total": len(all_conferences),
                 "new": new_count,
                 "updated": updated_count,
+                "execution_time_seconds": round(execution_time, 2),
+                "conferences_per_second": round(conferences_per_second, 2),
                 "breakdown": MetadataValue.md(
                     "\n".join([f"- **{k}**: {v}" for k, v in source_counts.items()])
                 ),

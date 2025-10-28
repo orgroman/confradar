@@ -12,6 +12,9 @@ def test_dagster_definitions_load():
     # Check that we have assets defined
     assert hasattr(defs, "assets")
     assert len(defs.assets) == 6  # 5 scrapers + 1 storage
+    # Check that we have asset checks defined
+    assert hasattr(defs, "asset_checks")
+    assert len(defs.asset_checks) == 4  # 4 asset checks
     # Check that we have jobs defined
     assert hasattr(defs, "jobs")
     assert len(defs.jobs) > 0
@@ -49,6 +52,15 @@ def test_daily_schedule_exists():
     # Verify cron schedule
     daily_schedule = [s for s in defs.schedules if s.name == "daily_crawl_schedule"][0]
     assert daily_schedule.cron_schedule == "0 2 * * *"
+
+
+def test_asset_checks_exist():
+    """Test that all expected asset checks are defined."""
+    # Asset checks are defined in defs.asset_checks
+    assert len(defs.asset_checks) == 4
+
+    # Can't easily get check names without executing them, but we can verify count
+    # The checks are: conference_count, data_freshness, volume_change, duplicate_detection
 
 
 @pytest.mark.integration

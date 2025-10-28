@@ -5,6 +5,12 @@ This module defines all Dagster assets, jobs, schedules, and sensors for ConfRad
 
 from dagster import Definitions, ScheduleDefinition, define_asset_job
 
+from confradar.dagster.assets.checks import (
+    conference_count_check,
+    data_freshness_check,
+    duplicate_detection_check,
+    volume_change_check,
+)
 from confradar.dagster.assets.scrapers import (
     acl_web_conferences,
     ai_deadlines_conferences,
@@ -37,6 +43,12 @@ defs = Definitions(
         elra_conferences,
         wikicfp_conferences,
         store_conferences,
+    ],
+    asset_checks=[
+        conference_count_check,
+        data_freshness_check,
+        volume_change_check,
+        duplicate_detection_check,
     ],
     jobs=[crawl_job],
     schedules=[daily_crawl_schedule],

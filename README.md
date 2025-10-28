@@ -137,10 +137,26 @@ $env:OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 ### Accessing Services
 
-- **Dagster UI**: http://localhost:3000
+- **Dagster UI**: http://localhost:3000 - Pipeline orchestration and monitoring
 - **LiteLLM Proxy**: http://localhost:4000
 - **PostgreSQL**: localhost:5432 (username: confradar, password: confradar)
 - **pgAdmin**: http://localhost:5050 (email: admin@confradar.local, password: admin)
+
+### Pipeline Monitoring
+
+The Dagster pipeline includes comprehensive monitoring with automated health checks:
+
+- **Asset Checks**: Validate data quality on every run (conference counts, freshness, volumes, duplicates)
+- **Performance Metrics**: Track execution time and throughput per source
+- **Run Monitoring**: Automatic alerts for failures and timeouts
+
+View the Dagster UI at http://localhost:3000 to see:
+- Real-time pipeline status
+- Asset check results (pass/fail indicators)
+- Performance metrics and conference counts
+- Historical trends
+
+For detailed monitoring setup and alert response procedures, see [`docs/MONITORING.md`](docs/MONITORING.md).
 
 ## Contributing
 
