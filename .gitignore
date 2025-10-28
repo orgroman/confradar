@@ -1,4 +1,19 @@
-.wiki-tmp/# Python
+.wiki-tmp/
+
+# Node.js / Frontend
+node_modules/
+dist/
+*.local
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.eslintcache
+
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
