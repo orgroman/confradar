@@ -1,10 +1,16 @@
 from __future__ import annotations
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, ConfigDict, Field
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
+
     # LLM provider selection and defaults
     llm_provider: str = Field(default="openai", alias="LLM_PROVIDER")
     llm_model: str = Field(default="gpt-4o-mini", alias="LLM_MODEL")
@@ -26,11 +32,6 @@ class Settings(BaseSettings):
     )
     openai_timeout_s: float = Field(default=20.0, alias="OPENAI_TIMEOUT_S")
     openai_max_retries: int = Field(default=3, alias="OPENAI_MAX_RETRIES")
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
 
 
 settings = Settings()  # Loaded at import-time for convenience in small apps

@@ -30,6 +30,8 @@ dependencies = [
   "playwright>=1.40",
   "dagster>=1.8",
   "dagster-webserver>=1.8",
+  "fastapi>=0.104",
+  "uvicorn[standard]>=0.24",
 ]
 
 [project.optional-dependencies]
@@ -59,7 +61,7 @@ lint.select = ["E", "F", "I", "UP", "B"]
 lint.ignore = ["E203", "E266", "E501"]
 
 [tool.pytest.ini_options]
-addopts = "-q --cov=confradar --cov-report=term-missing"
+addopts = "-q"
 # When running tests from the package directory
 testpaths = ["tests"]
 markers = [
