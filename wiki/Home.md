@@ -60,7 +60,7 @@ ConfRadar solves a common problem for researchers: **staying on top of academic 
            ↓                    ↓                    ↓
     ┌──────────┐         ┌──────────┐        ┌──────────┐
     │   Web    │         │ Database │        │   LLM    │
-    │ Sources  │         │ (SQLite) │        │  (API)   │
+    │ Sources  │         │(PostgreSQL)│       │  (API)   │
     └──────────┘         └──────────┘        └──────────┘
 ```
 
@@ -72,6 +72,7 @@ ConfRadar solves a common problem for researchers: **staying on top of academic 
 - ✅ Scrapy framework with 5 production spiders (AI Deadlines, ACL Web, Chairing Tool, ELRA, WikiCFP)
 - ✅ Dagster orchestration pipeline with daily scheduling
 - ✅ Database models with SQLAlchemy and Alembic migrations
+- ✅ PostgreSQL database with Docker Compose setup
 - ✅ Docker Compose setup with LiteLLM proxy and Dagster services
 
 **Active Development**:

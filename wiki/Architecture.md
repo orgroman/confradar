@@ -16,7 +16,7 @@ ConfRadar is built as a modular pipeline with clear separation of concerns. The 
            ↓                    ↓                    ↓
     ┌──────────┐         ┌──────────┐        ┌──────────┐
     │   Web    │         │ Database │        │   LLM    │
-    │ Sources  │         │ (SQLite) │        │  (API)   │
+    │ Sources  │         │(PostgreSQL)│       │  (API)   │
     └──────────┘         └──────────┘        └──────────┘
 ```
 
@@ -107,11 +107,11 @@ Middleware (Headers, Retries, Rate Limiting)
 
 **Technologies**:
 - **SQLAlchemy ORM**: Database abstraction
-- **PostgreSQL**: Primary database (Docker Compose, production)
-- **SQLite**: Legacy support for local testing only
+- **PostgreSQL**: Primary database (Docker Compose, production, and development)
+- **SQLite**: Supported for local unit testing only
 - **Alembic**: Schema migrations
 
-> **Note**: Migration from SQLite to PostgreSQL is in progress (P0, M1). PostgreSQL is required for production deployments due to better concurrency, transaction handling, and cloud compatibility. See [PostgreSQL Migration Issue](../issues/postgres-migration.md) for details.
+> **✓ PostgreSQL Migration Complete**: PostgreSQL is now the default database for all environments. SQLite support is maintained only for fast unit tests. All Alembic migrations have been tested against PostgreSQL.
 
 **Models**:
 - `Conference`: Core conference entity
@@ -294,10 +294,11 @@ docker-compose up dagster-webserver
 
 ```
 Developer Machine
-  ├── SQLite database (data/confradar.db)
+  ├── PostgreSQL database (Docker, port 5432)
+  ├── pgAdmin (Docker, port 5050)
   ├── LiteLLM proxy (Docker, port 4000)
-  ├── Dagster webserver (Python, port 3000)
-  └── Dagster daemon (Python, background)
+  ├── Dagster webserver (Docker, port 3000)
+  └── Dagster daemon (Docker, background)
 ```
 
 ### Production (Planned)
@@ -317,7 +318,7 @@ Cloud Infrastructure
 |-------|-------------|
 | **Orchestration** | Dagster 1.8+ |
 | **Web Scraping** | Scrapy 2.11+ |
-| **Database** | SQLAlchemy, SQLite/PostgreSQL |
+| **Database** | SQLAlchemy, PostgreSQL (SQLite for tests) |
 | **Migrations** | Alembic |
 | **LLM Access** | LiteLLM, OpenAI |
 | **Validation** | Pydantic |
@@ -331,8 +332,11 @@ Cloud Infrastructure
 All configuration via environment variables:
 
 ```powershell
-# Database
-$env:DATABASE_URL = "sqlite:///data/confradar.db"  # or postgresql://...
+# Database (PostgreSQL default)
+$env:DATABASE_URL = "postgresql+psycopg://confradar:confradar@localhost:5432/confradar"
+
+# For unit tests with SQLite (optional)
+# $env:DATABASE_URL = "sqlite:///test.db"
 
 # LLM
 $env:CONFRADAR_SA_OPENAI = "sk-..."  # preferred
@@ -377,13 +381,12 @@ Settings loaded via Pydantic:
 ### Current Limitations
 
 - Single-threaded Scrapy per source
-- SQLite limits concurrent writes
 - No caching layer
 
 ### Future Improvements
 
 - **Horizontal Scaling**: Multiple Dagster workers
-- **Database**: PostgreSQL with connection pooling
+- **Database**: Connection pooling (pgbouncer) for high-load scenarios
 - **Caching**: Redis for API responses
 - **CDN**: Static assets and calendar exports
 - **Queue**: Celery for async tasks
@@ -479,9 +482,9 @@ See [Frontend PRD](../confradar_web_prd.md) for complete requirements and specif
 
 ### Backend Priorities
 
-1. **P0 - PostgreSQL Migration**: Complete migration from SQLite to PostgreSQL for production deployment
-2. **P1 - Testing Framework**: Expand test coverage beyond current unit tests to >80%
-3. **P1 - Pipeline Monitoring**: Add Dagster asset checks and alerting for pipeline health
+1. **P1 - Testing Framework**: Expand test coverage beyond current unit tests to >80%
+2. **P1 - Pipeline Monitoring**: Add Dagster asset checks and alerting for pipeline health
+3. **P1 - Connection Pooling**: Add pgbouncer for high-load scenarios (optional)
 4. **M3 - Extraction**: Implement LLM-based date/venue extraction
 5. **M4 - Clustering**: Build alias resolution and workshop clustering
 6. **M5 - Change Detection**: Add versioning and diff computation
