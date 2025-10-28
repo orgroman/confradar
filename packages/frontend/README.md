@@ -143,7 +143,7 @@ npm run format:check
 
 ## Routing
 
-The application uses React Router v6 for client-side routing:
+The application uses React Router v7 for client-side routing:
 
 - `/` - Home page
 - `/conferences` - Conference listing page
