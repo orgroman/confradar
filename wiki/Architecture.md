@@ -405,12 +405,95 @@ Settings loaded via Pydantic:
 - Verify LLM extraction on real data
 - Test Notion/Docs sync
 
+### 9. Frontend Application Layer (In Progress - 2025 Q4-2026 Q1)
+
+**Purpose**: Provide a modern web interface for browsing and searching conference information.
+
+**Technologies**:
+- **Framework**: React with Vite (or Next.js for SSR)
+- **UI Library**: Material-UI, Ant Design, or Shadcn/ui
+- **State Management**: Context API, Zustand, or Redux Toolkit
+- **Routing**: React Router
+- **Styling**: Tailwind CSS or styled-components
+- **Build Tools**: Vite, TypeScript, ESLint, Prettier
+- **Testing**: Vitest, React Testing Library, Playwright
+- **Deployment**: Vercel, Netlify, or AWS CloudFront
+
+**Features** (5 milestones, Dec 2025 - Apr 2026):
+
+**FE-1: Infrastructure & Setup** (Dec 2025)
+- Framework selection and project scaffolding
+- Component library and styling system
+- State management configuration
+- Routing and navigation structure
+- Build tools and optimization
+
+**FE-2: List View & Display** (Jan 2026)
+- Conference list page with table/card views
+- Conference card components with responsive design
+- Pagination and lazy loading
+- Sort functionality (date, name, deadline proximity)
+- Responsive table/card view toggle
+
+**FE-3: Search & Filtering** (Jan 2026)
+- Real-time search bar with debouncing
+- Date range filters (deadline, conference dates)
+- Location and region filters
+- Field/category tag filtering
+- Active filter chips display
+- Clear all filters option
+
+**FE-4: Detail View & Timezone** (Feb 2026)
+- Conference detail page with full information
+- Important dates section with all deadlines
+- Location details with optional map integration
+- AoE (Anywhere on Earth) timezone toggle
+- Custom timezone selector with popular zones
+- Date/time conversion utilities
+
+**FE-5: Calendar Export & Settings** (Mar-Apr 2026)
+- ICS file generation for calendar export
+- Export modal with customization options
+- Optional calendar subscription feed
+- Settings page/modal UI
+- LocalStorage persistence for user preferences
+- Theme switcher (light/dark mode)
+
+**API Integration Requirements**:
+- REST API client service layer
+- Conference list endpoint integration with pagination/filtering
+- Conference detail endpoint integration
+- Error handling and retry logic
+- Loading states and skeleton screens
+- Optimistic UI updates
+
+**Current Status** (Oct 2025):
+- 40 frontend issues created across 9 epics
+- 5 foundational infrastructure issues (#97-#101) delegated to GitHub Copilot coding agent
+- Active PRs: #127-#131 (framework, components, state, routing, build tools)
+- Copilot is implementing Phase 1 infrastructure setup
+
+See [Frontend PRD](../confradar_web_prd.md) for complete requirements and specifications.
+
 ## Next Steps
 
-1. **M3 - Extraction**: Implement LLM-based date/venue extraction
-2. **M4 - Clustering**: Build alias resolution and workshop clustering
-3. **M5 - Change Detection**: Add versioning and diff computation
-4. **M6 - Serving**: Create REST API and integrations
-5. **M7 - Evaluation**: Build test sets and metrics
+### Backend Priorities
+
+1. **P0 - PostgreSQL Migration**: Complete migration from SQLite to PostgreSQL for production deployment
+2. **P1 - Testing Framework**: Expand test coverage beyond current unit tests to >80%
+3. **P1 - Pipeline Monitoring**: Add Dagster asset checks and alerting for pipeline health
+4. **M3 - Extraction**: Implement LLM-based date/venue extraction
+5. **M4 - Clustering**: Build alias resolution and workshop clustering
+6. **M5 - Change Detection**: Add versioning and diff computation
+7. **M6 - REST API**: Create FastAPI backend to serve frontend application
+8. **M7 - Evaluation**: Build test sets and metrics
+
+### Frontend Priorities
+
+1. **FE-1 (In Progress)**: Complete infrastructure setup via Copilot PRs #127-#131
+2. **FE-2**: Implement conference list view and card components
+3. **FE-3**: Build search and filtering system
+4. **FE-4**: Create detail view with timezone support
+5. **FE-5**: Add calendar export and user settings
 
 See [Roadmap](Roadmap) for detailed timeline.
