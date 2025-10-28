@@ -53,6 +53,18 @@ local_artifact_storage:
 telemetry:
   enabled: false
 
+# Run monitoring and alerting configuration
+run_monitoring:
+  enabled: true
+  # Alert if a run hasn't completed after this many seconds (5 minutes)
+  max_runtime_seconds: 300
+  # Poll interval for checking run status (1 minute)
+  poll_interval_seconds: 60
+  # Maximum number of retries for failed runs
+  max_retries: 2
+  # Start timeout - alert if run doesn't start within this time
+  start_timeout_seconds: 120
+
 # Retention policy for run history
 retention:
   schedule:

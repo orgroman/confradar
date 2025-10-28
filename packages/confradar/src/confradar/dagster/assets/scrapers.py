@@ -4,6 +4,7 @@ Each asset represents a scraper that fetches conference data from a specific sou
 Assets return lists of conference dictionaries that can be consumed by downstream assets.
 """
 
+import time
 from typing import Any
 
 from dagster import MetadataValue, Output, asset
@@ -17,15 +18,16 @@ from confradar.scrapers.spiders.elra import ELRASpider
 from confradar.scrapers.spiders.wikicfp import WikiCFPSpider
 
 
-def run_spider(spider_class) -> list[dict[str, Any]]:
-    """Run a Scrapy spider and collect items.
+def run_spider(spider_class) -> tuple[list[dict[str, Any]], float]:
+    """Run a Scrapy spider and collect items with execution time tracking.
 
     Args:
         spider_class: The spider class to run
 
     Returns:
-        List of scraped conference items as dictionaries
+        Tuple of (list of scraped conference items, execution time in seconds)
     """
+    start_time = time.time()
     collected_items = []
 
     def collect_item(item, response, spider):
@@ -57,7 +59,8 @@ def run_spider(spider_class) -> list[dict[str, Any]]:
     process.crawl(spider_class)
     process.start()
 
-    return collected_items
+    execution_time = time.time() - start_time
+    return collected_items, execution_time
 
 
 @asset(
@@ -66,13 +69,15 @@ def run_spider(spider_class) -> list[dict[str, Any]]:
 )
 def ai_deadlines_conferences() -> Output[list[dict[str, Any]]]:
     """Scrape conferences from aideadlines.org (NLP focus)."""
-    items = run_spider(AIDeadlinesSpider)
+    items, execution_time = run_spider(AIDeadlinesSpider)
 
     return Output(
         value=items,
         metadata={
             "count": len(items),
             "source": "aideadlines",
+            "execution_time_seconds": round(execution_time, 2),
+            "conferences_per_second": round(len(items) / execution_time, 2) if execution_time > 0 else 0,
             "preview": (
                 MetadataValue.md("\n".join([f"- {item['name']}" for item in items[:5]]))
                 if items
@@ -88,13 +93,15 @@ def ai_deadlines_conferences() -> Output[list[dict[str, Any]]]:
 )
 def acl_web_conferences() -> Output[list[dict[str, Any]]]:
     """Scrape conferences from ACL Web."""
-    items = run_spider(ACLWebSpider)
+    items, execution_time = run_spider(ACLWebSpider)
 
     return Output(
         value=items,
         metadata={
             "count": len(items),
             "source": "acl_web",
+            "execution_time_seconds": round(execution_time, 2),
+            "conferences_per_second": round(len(items) / execution_time, 2) if execution_time > 0 else 0,
             "preview": (
                 MetadataValue.md("\n".join([f"- {item['name']}" for item in items[:5]]))
                 if items
@@ -110,13 +117,15 @@ def acl_web_conferences() -> Output[list[dict[str, Any]]]:
 )
 def chairing_tool_conferences() -> Output[list[dict[str, Any]]]:
     """Scrape conferences from ChairingTool platform."""
-    items = run_spider(ChairingToolSpider)
+    items, execution_time = run_spider(ChairingToolSpider)
 
     return Output(
         value=items,
         metadata={
             "count": len(items),
             "source": "chairing_tool",
+            "execution_time_seconds": round(execution_time, 2),
+            "conferences_per_second": round(len(items) / execution_time, 2) if execution_time > 0 else 0,
             "preview": (
                 MetadataValue.md("\n".join([f"- {item['name']}" for item in items[:5]]))
                 if items
@@ -132,13 +141,15 @@ def chairing_tool_conferences() -> Output[list[dict[str, Any]]]:
 )
 def elra_conferences() -> Output[list[dict[str, Any]]]:
     """Scrape conferences from ELRA."""
-    items = run_spider(ELRASpider)
+    items, execution_time = run_spider(ELRASpider)
 
     return Output(
         value=items,
         metadata={
             "count": len(items),
             "source": "elra",
+            "execution_time_seconds": round(execution_time, 2),
+            "conferences_per_second": round(len(items) / execution_time, 2) if execution_time > 0 else 0,
             "preview": (
                 MetadataValue.md("\n".join([f"- {item['name']}" for item in items[:5]]))
                 if items
@@ -154,13 +165,15 @@ def elra_conferences() -> Output[list[dict[str, Any]]]:
 )
 def wikicfp_conferences() -> Output[list[dict[str, Any]]]:
     """Scrape conferences from WikiCFP."""
-    items = run_spider(WikiCFPSpider)
+    items, execution_time = run_spider(WikiCFPSpider)
 
     return Output(
         value=items,
         metadata={
             "count": len(items),
             "source": "wikicfp",
+            "execution_time_seconds": round(execution_time, 2),
+            "conferences_per_second": round(len(items) / execution_time, 2) if execution_time > 0 else 0,
             "preview": (
                 MetadataValue.md("\n".join([f"- {item['name']}" for item in items[:5]]))
                 if items
