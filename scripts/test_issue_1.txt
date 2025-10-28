@@ -1,0 +1,29 @@
+## Epic
+#96 Testing & Quality Assurance
+
+## Description
+Create comprehensive unit tests for all React/Vue components.
+
+## Tasks
+- [ ] Set up test conventions
+- [ ] Test ConferenceCard component
+- [ ] Test SearchBar component
+- [ ] Test FilterPanel components
+- [ ] Test timezone conversion utilities
+- [ ] Test API service layer
+- [ ] Test hooks/composables
+- [ ] Achieve >80% coverage
+- [ ] Add tests to CI
+
+## Acceptance Criteria
+- All critical components tested
+- >80% code coverage
+- Tests pass in CI
+- Tests run quickly (<30s)
+- Well organized test files
+
+## Priority
+High
+
+## Estimated Effort
+5-7 days
