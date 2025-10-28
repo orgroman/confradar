@@ -1,4 +1,10 @@
-.wiki-tmp/# Python
+.wiki-tmp/
+# Node.js / Frontend
+node_modules/
+dist/
+.cache/
+
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
