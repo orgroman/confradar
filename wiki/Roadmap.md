@@ -36,9 +36,9 @@ See [Frontend PRD](../confradar_web_prd.md) for complete specifications.
 **Status**: Core pipeline operational with 5 scrapers + Dagster orchestration
 
 **Next Priorities**:
-1. **P0**: PostgreSQL migration (move from SQLite to PostgreSQL for production)
-2. **P1**: Expand test coverage to >80%
-3. **P1**: Add pipeline monitoring and alerting
+1. **P1**: Expand test coverage to >80%
+2. **P1**: Add pipeline monitoring and alerting
+3. **P1**: Add connection pooling (pgbouncer) for high-load scenarios (optional)
 4. **M6**: Build REST API to serve frontend application
 
 See [Backend Issues](https://github.com/orgroman/confradar/issues) for tracking.

@@ -202,8 +202,17 @@ Instance configuration (storage, scheduler, logs).
 
 ```yaml
 storage:
-  sqlite:
-    base_dir: /opt/dagster/dagster_home/storage
+  postgres:
+    postgres_db:
+      username:
+        env: POSTGRES_USER
+      password:
+        env: POSTGRES_PASSWORD
+      hostname:
+        env: POSTGRES_HOSTNAME
+      db_name:
+        env: POSTGRES_DB
+      port: 5432
 
 run_coordinator:
   module: dagster.core.run_coordinator
