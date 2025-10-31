@@ -73,11 +73,7 @@ class DatabasePipeline:
 
         try:
             # Find or create conference
-            conference = (
-                self.session.query(Conference)
-                .filter_by(key=item["key"]) 
-                .first()
-            )
+            conference = self.session.query(Conference).filter_by(key=item["key"]).first()
 
             if not conference:
                 conference = Conference(
@@ -120,7 +116,7 @@ class DatabasePipeline:
 
                 # Handle both due_at and due_date keys (for compatibility)
                 due_value = deadline_data.get("due_date") or deadline_data.get("due_at")
-                
+
                 if not due_value:
                     # Skip deadlines without dates
                     spider.logger.debug(f"Skipping deadline without date for {item['key']}")
