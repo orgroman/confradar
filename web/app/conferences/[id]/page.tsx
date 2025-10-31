@@ -7,17 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, MapPin, ExternalLink, Download } from "lucide-react"
 import { formatDate } from "@/lib/utils/date"
 import { notFound } from "next/navigation"
+import type { Deadline } from "@/lib/api/types"
 
 export default async function ConferenceDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }) {
-  const { id } = await params
+  const { id } = params
   const conference = await getConferenceById(id)
 
   if (!conference) {
     notFound()
+    return null as unknown as JSX.Element
   }
 
   return (
@@ -27,7 +29,7 @@ export default async function ConferenceDetailPage({
         <div className="border-b bg-muted/30 py-8">
           <div className="container mx-auto px-4">
             <div className="mb-4 flex flex-wrap gap-2">
-              {conference.tags.map((tag) => (
+              {conference.tags.map((tag: string) => (
                 <Badge key={tag} variant="secondary">
                   {tag}
                 </Badge>
@@ -61,7 +63,7 @@ export default async function ConferenceDetailPage({
                 <CardContent>
                   <p className="text-muted-foreground">{conference.description}</p>
                   {conference.website && (
-                    <Button asChild variant="link" className="mt-4 px-0">
+                    <Button asChild variant="ghost" className="mt-4 px-0">
                       <a href={conference.website} target="_blank" rel="noopener noreferrer">
                         Visit Conference Website
                         <ExternalLink className="ml-2 size-4" />
@@ -100,7 +102,7 @@ export default async function ConferenceDetailPage({
                   <CardTitle>Important Dates</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {conference.deadlines.map((deadline, index) => (
+                  {conference.deadlines.map((deadline: Deadline, index: number) => (
                     <div key={index} className="border-b pb-4 last:border-0">
                       <p className="mb-1 font-medium">{deadline.name}</p>
                       <p className="text-sm text-muted-foreground">{formatDate(deadline.date)}</p>

@@ -17,7 +17,7 @@ export function ConferenceCard({ conference }: ConferenceCardProps) {
       <Card className="h-full transition-shadow hover:shadow-md">
         <CardHeader>
           <div className="mb-2 flex flex-wrap gap-2">
-            {conference.tags.slice(0, 2).map((tag) => (
+            {conference.tags.slice(0, 2).map((tag: string) => (
               <Badge key={tag} variant="secondary" className="text-xs">
                 {tag}
               </Badge>
