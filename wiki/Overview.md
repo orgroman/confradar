@@ -93,6 +93,7 @@ ConfRadar automates the entire pipeline from discovery to presentation:
 - Track trends in deadline timing
 - Analyze extension patterns
 
+
 ## Technology Stack
 
 - **Orchestration**: Dagster (asset-based pipeline with scheduling and monitoring)
@@ -103,6 +104,28 @@ ConfRadar automates the entire pipeline from discovery to presentation:
 - **Containers**: Docker Compose (PostgreSQL, LiteLLM proxy, Dagster daemon/webserver)
 - **Testing**: pytest with coverage tracking
 - **CI/CD**: GitHub Actions
+
+## Secret Management (Azure Key Vault)
+
+All project secrets (API keys, credentials, etc.) are managed in **Azure Key Vault** (`kvconfradar`).
+
+**Azure Subscription ID:** `8592e500-3312-4991-9d2a-2b97e43b1810`
+
+- Access secrets using Azure MCP for development and CI/CD workflows.
+- The OpenAI API key and Vercel v0 API key for frontend development are stored in the key vault.
+- If needed, secrets from Azure Key Vault can be synced to GitHub repository secrets for workflows and deployments.
+- Never commit secrets to the repository; always use secure vault access.
+
+**How to access secrets:**
+1. Use Azure MCP to authenticate and retrieve secrets from `kvconfradar`.
+2. Reference secrets in your local `.env` or CI/CD workflows using Azure Key Vault integration.
+3. For frontend (Vercel) development, use the Vercel v0 API key from the vault.
+4. For LLM/OpenAI access, use the OpenAI API key from the vault.
+
+**Best Practices:**
+- Use Azure Key Vault as the single source of truth for all secrets.
+- Only sync secrets to GitHub if required for automation.
+- Rotate secrets regularly and audit access permissions.
 
 > **Migration Note**: PostgreSQL is now the default database for production and development. SQLite support is maintained for unit tests only. See [PostgreSQL Migration Issue](../issues/postgres-migration.md).
 

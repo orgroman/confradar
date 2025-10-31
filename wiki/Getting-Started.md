@@ -35,6 +35,7 @@ docker compose logs -f
 
 Services will be available at:
 - **Dagster UI**: http://localhost:3000
+- **Frontend (Next.js)**: http://localhost:3100
 - **LiteLLM Proxy**: http://localhost:4000
 - **PostgreSQL**: localhost:5432
 - **pgAdmin**: http://localhost:5050 (email: admin@confradar.local, password: admin)
@@ -193,6 +194,23 @@ docker compose logs -f dagster-webserver
 ```
 
 Access the Dagster UI at: **http://localhost:3000**
+
+## Frontend UI (Next.js)
+
+The frontend lives in `web/` and is containerized for local development.
+
+```powershell
+# Start only the frontend (Dev server on port 3100)
+docker compose up -d web
+
+# Follow logs
+docker compose logs -f web
+
+# Rebuild after dependency changes
+docker compose build web; docker compose up -d web
+```
+
+Open the app at: **http://localhost:3100**
 
 ## Running Scrapers
 
