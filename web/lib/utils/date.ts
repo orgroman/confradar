@@ -1,3 +1,5 @@
+const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24
+
 /**
  * Format a date to a human-readable string
  */
@@ -12,14 +14,14 @@ export function formatDate(date: Date | undefined): string {
 }
 
 /**
- * Calculate days remaining until a date
+ * Calculate days until a date (can be negative for past dates)
  */
 export function daysUntil(date: Date | undefined): number | null {
   if (!date) return null
   
   const now = new Date()
   const diff = date.getTime() - now.getTime()
-  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+  return Math.ceil(diff / MILLISECONDS_PER_DAY)
 }
 
 /**
