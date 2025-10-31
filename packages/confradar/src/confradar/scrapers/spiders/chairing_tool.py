@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from datetime import datetime, timezone
 
 import scrapy
-from scrapy.http import Response, Request
+from scrapy.http import Request, Response
 
 from confradar.scrapers.items import ConferenceItem
 
