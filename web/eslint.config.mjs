@@ -1,20 +1,4 @@
-import next from "eslint-config-next";
-
-export default [
-  // Next.js recommended rules, including core-web-vitals when applicable
-  ...next,
-  {
-    rules: {
-      // Match previous .eslintrc.cjs behavior
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }
-      ],
-    },
-    ignores: [
-      "**/.next/**",
-      "**/dist/**",
-      "**/node_modules/**"
-    ],
-  },
-];
+// Flat ESLint config (v9+).
+// This project uses the classic .eslintrc.cjs via ESLint v8.
+// Keep flat config empty to avoid conflicts if ESLINT_USE_FLAT_CONFIG is set.
+export default [];
