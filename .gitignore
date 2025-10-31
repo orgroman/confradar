@@ -1,4 +1,11 @@
-.wiki-tmp/# Python
+.wiki-tmp/
+# Node / Frontend
+node_modules/
+web/dist/
+web/node_modules/
+*.log
+
+# Python
 __pycache__/
 *.py[cod]
 *.pyo
@@ -33,11 +40,10 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/ - commented out to allow web/lib directory
 lib64/
 parts/
 sdist/
