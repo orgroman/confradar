@@ -19,8 +19,8 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Only run deployment after frontend CI passes
-    needs: []
+    # Note: This workflow runs independently. Ensure Frontend CI passes before merging.
+    # Consider enabling branch protection rules to require Frontend CI before merge.
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,7 +45,13 @@ jobs:
         if: github.event_name == 'pull_request'
         id: deploy-preview
         run: |
-          DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | grep -o 'https://[^ ]*')
+          OUTPUT=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} 2>&1)
+          echo "$OUTPUT"
+          DEPLOYMENT_URL=$(echo "$OUTPUT" | grep -oE 'https://[a-zA-Z0-9.-]+\.vercel\.app' | head -1)
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "Failed to extract deployment URL"
+            exit 1
+          fi
           echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
           echo "### 🚀 Preview Deployment" >> $GITHUB_STEP_SUMMARY
           echo "Preview URL: $DEPLOYMENT_URL" >> $GITHUB_STEP_SUMMARY
@@ -54,7 +60,13 @@ jobs:
       - name: Deploy to Vercel (Production)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | grep -o 'https://[^ ]*')
+          OUTPUT=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} 2>&1)
+          echo "$OUTPUT"
+          DEPLOYMENT_URL=$(echo "$OUTPUT" | grep -oE 'https://[a-zA-Z0-9.-]+' | head -1)
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "Warning: Failed to extract deployment URL, but deployment may have succeeded"
+            DEPLOYMENT_URL="Check Vercel dashboard"
+          fi
           echo "### 🚀 Production Deployment" >> $GITHUB_STEP_SUMMARY
           echo "Production URL: $DEPLOYMENT_URL" >> $GITHUB_STEP_SUMMARY
         working-directory: web
