@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 
-import dateparser
+import dateparser  # type: ignore[import-untyped]
 
 MONTHS = (
     "jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|"

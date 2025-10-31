@@ -70,7 +70,7 @@ class ACLWebSpider(scrapy.Spider):
         self.logger.info(f"Found {len(rows)} event rows")
 
         # Group deadlines by conference key to handle duplicates
-        conferences_map = {}
+        conferences_map: dict[str, dict[str, Any]] = {}
 
         for row in rows:
             cells = row.css("td")

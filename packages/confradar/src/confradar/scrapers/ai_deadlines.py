@@ -68,13 +68,14 @@ class AIDeadlinesScraper(Scraper):
         We extract this using regex patterns to find moment.tz() calls.
         """
         soup = BeautifulSoup(raw, "html.parser")
-        conferences = {}  # Use dict to deduplicate by key
+        conferences: dict[str, dict[str, Any]] = {}  # Use dict to deduplicate by key
 
         # Find conference entries - structure may vary, this is a best-effort parse
         # Look for conference links and deadline info
         for link in soup.find_all("a", href=re.compile(r"/conference\?id=")):
             try:
-                conf_id = re.search(r"id=([^&]+)", link.get("href", ""))
+                href_value = link.get("href") or ""
+                conf_id = re.search(r"id=([^&]+)", href_value)
                 if not conf_id:
                     continue
 
@@ -119,7 +120,7 @@ class AIDeadlinesScraper(Scraper):
         # Extract deadline information from JavaScript blocks
         # Pattern: var timezone = "UTC-12"; moment.tz("YYYY-MM-DD HH:MM:SS", timezone)
         # We need to match conference IDs with their timezone and deadline
-        script_tags = soup.find_all("script", string=True)
+        script_tags = soup.find_all("script")
         for script in script_tags:
             script_text = script.string
             if not script_text:
