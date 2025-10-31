@@ -1,9 +1,9 @@
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Badge } from "./ui/badge"
 import { Calendar, MapPin } from "lucide-react"
-import { formatDate } from "@/lib/utils/date"
-import type { Conference } from "@/lib/api/types"
+import { formatDate } from "../lib/utils/date"
+import type { Conference } from "../lib/api/types"
 
 interface ConferenceCardProps {
   conference: Conference

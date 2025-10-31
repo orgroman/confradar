@@ -1,10 +1,10 @@
-import { Header } from "@/components/Header"
-import { Footer } from "@/components/Footer"
-import { FilterBar } from "@/components/FilterBar"
-import { ConferenceCard } from "@/components/ConferenceCard"
-import type { Conference } from "@/lib/api/types"
-import { ConferenceListSkeleton } from "@/components/Skeletons"
-import { getConferences } from "@/lib/api/client"
+import { Header } from "../../components/Header"
+import { Footer } from "../../components/Footer"
+import { FilterBar } from "../../components/FilterBar"
+import { ConferenceCard } from "../../components/ConferenceCard"
+import type { Conference } from "../../lib/api/types"
+import { ConferenceListSkeleton } from "../../components/Skeletons"
+import { getConferences } from "../../lib/api/client"
 import { Suspense } from "react"
 
 async function ConferenceList() {

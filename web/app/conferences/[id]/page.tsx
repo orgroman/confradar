@@ -1,13 +1,13 @@
-import { Header } from "@/components/Header"
-import { Footer } from "@/components/Footer"
-import { getConferenceById } from "@/lib/api/client"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Header } from "../../../components/Header"
+import { Footer } from "../../../components/Footer"
+import { getConferenceById } from "../../../lib/api/client"
+import { Badge } from "../../../components/ui/badge"
+import { Button } from "../../../components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card"
 import { Calendar, MapPin, ExternalLink, Download } from "lucide-react"
-import { formatDate } from "@/lib/utils/date"
+import { formatDate } from "../../../lib/utils/date"
 import { notFound } from "next/navigation"
-import type { Deadline } from "@/lib/api/types"
+import type { Deadline } from "../../../lib/api/types"
 
 export default async function ConferenceDetailPage({
   params,
@@ -19,7 +19,7 @@ export default async function ConferenceDetailPage({
 
   if (!conference) {
     notFound()
-    return null as unknown as JSX.Element
+    return null
   }
 
   return (

@@ -1,9 +1,9 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "./ui/button"
+import { Badge } from "./ui/badge"
 import { LayoutGrid, List, SlidersHorizontal } from "lucide-react"
-import { usePrefsStore } from "@/lib/state/prefs"
+import { usePrefsStore } from "../lib/state/prefs"
 
 export function FilterBar() {
   const { viewMode, setViewMode } = usePrefsStore()
