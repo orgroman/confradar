@@ -12,10 +12,6 @@ on:
       - 'web/**'
       - '.github/workflows/deploy-vercel.yml'
 
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -25,9 +21,24 @@ jobs:
       contents: read        # Read repository contents
       pull-requests: write  # Post comments on PRs
       deployments: write    # Create deployment status
+      id-token: write       # Required for OIDC authentication with Azure
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Retrieve Vercel Secrets from Azure Key Vault
+        uses: azure/get-keyvault-secrets@v1
+        with:
+          keyvault: 'kvconfradar'
+          secrets: 'VERCEL-TOKEN, VERCEL-ORG-ID, VERCEL-PROJECT-ID'
+        id: keyvault
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -38,18 +49,24 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=${{ github.event_name == 'push' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=${{ github.event_name == 'push' && 'production' || 'preview' }} --token=${{ steps.keyvault.outputs.VERCEL-TOKEN }}
         working-directory: web
+        env:
+          VERCEL_ORG_ID: ${{ steps.keyvault.outputs.VERCEL-ORG-ID }}
+          VERCEL_PROJECT_ID: ${{ steps.keyvault.outputs.VERCEL-PROJECT-ID }}
 
       - name: Build Project Artifacts
-        run: vercel build ${{ github.event_name == 'push' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build ${{ github.event_name == 'push' && '--prod' || '' }} --token=${{ steps.keyvault.outputs.VERCEL-TOKEN }}
         working-directory: web
+        env:
+          VERCEL_ORG_ID: ${{ steps.keyvault.outputs.VERCEL-ORG-ID }}
+          VERCEL_PROJECT_ID: ${{ steps.keyvault.outputs.VERCEL-PROJECT-ID }}
 
       - name: Deploy to Vercel (Preview)
         if: github.event_name == 'pull_request'
         id: deploy-preview
         run: |
-          OUTPUT=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} 2>&1)
+          OUTPUT=$(vercel deploy --prebuilt --token=${{ steps.keyvault.outputs.VERCEL-TOKEN }} 2>&1)
           echo "$OUTPUT"
           DEPLOYMENT_URL=$(echo "$OUTPUT" | grep -oE 'https://[a-zA-Z0-9.-]+\.vercel\.app' | head -1)
           if [ -z "$DEPLOYMENT_URL" ]; then
@@ -60,11 +77,14 @@ jobs:
           echo "### 🚀 Preview Deployment" >> $GITHUB_STEP_SUMMARY
           echo "Preview URL: $DEPLOYMENT_URL" >> $GITHUB_STEP_SUMMARY
         working-directory: web
+        env:
+          VERCEL_ORG_ID: ${{ steps.keyvault.outputs.VERCEL-ORG-ID }}
+          VERCEL_PROJECT_ID: ${{ steps.keyvault.outputs.VERCEL-PROJECT-ID }}
 
       - name: Deploy to Vercel (Production)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          OUTPUT=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} 2>&1)
+          OUTPUT=$(vercel deploy --prebuilt --prod --token=${{ steps.keyvault.outputs.VERCEL-TOKEN }} 2>&1)
           echo "$OUTPUT"
           DEPLOYMENT_URL=$(echo "$OUTPUT" | grep -oE 'https://[a-zA-Z0-9.-]+' | head -1)
           if [ -z "$DEPLOYMENT_URL" ]; then
@@ -74,6 +94,9 @@ jobs:
           echo "### 🚀 Production Deployment" >> $GITHUB_STEP_SUMMARY
           echo "Production URL: $DEPLOYMENT_URL" >> $GITHUB_STEP_SUMMARY
         working-directory: web
+        env:
+          VERCEL_ORG_ID: ${{ steps.keyvault.outputs.VERCEL-ORG-ID }}
+          VERCEL_PROJECT_ID: ${{ steps.keyvault.outputs.VERCEL-PROJECT-ID }}
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'

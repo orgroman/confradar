@@ -10,27 +10,42 @@ This checklist tracks the manual configuration steps required to complete the Ve
 - [ ] Verify build settings (build command, output directory) are correct
 - [ ] Ensure Node.js version is set to 20.x
 
-## 2. Retrieve Secrets from Azure Key Vault
+## 2. Configure Azure Service Principal for GitHub Actions
 
-Using Azure Portal or Azure MCP:
-- [ ] Retrieve `VERCEL_TOKEN` from Azure Key Vault (`kvconfradar`)
-- [ ] Retrieve `VERCEL_ORG_ID` from Azure Key Vault (`kvconfradar`)
-- [ ] Retrieve `VERCEL_PROJECT_ID` from Azure Key Vault (`kvconfradar`)
+The workflow uses Azure Key Vault integration with OIDC authentication.
+
+### Setup Azure OIDC
+- [ ] Create or identify Azure Service Principal for GitHub Actions
+- [ ] Configure federated credentials for GitHub repository
+  - Entity type: Branch
+  - GitHub repository: orgroman/confradar
+  - Branch: main (and other branches as needed)
+- [ ] Grant Service Principal access to Key Vault (`kvconfradar`)
+  - Permission: Get and List secrets
+  - Access policy or RBAC role: Key Vault Secrets User
+
+### Add Azure Secrets to GitHub
+Go to: https://github.com/orgroman/confradar/settings/secrets/actions
+
+Add three repository secrets for Azure authentication:
+- [ ] `AZURE_CLIENT_ID` - Azure Service Principal Client ID
+- [ ] `AZURE_TENANT_ID` - Azure Tenant ID
+- [ ] `AZURE_SUBSCRIPTION_ID` - Value: `8592e500-3312-4991-9d2a-2b97e43b1810`
+
+## 3. Verify Vercel Secrets in Azure Key Vault
+
+Ensure these secrets exist in Azure Key Vault (`kvconfradar`) with exact names:
+- [ ] `VERCEL-TOKEN` - Vercel API authentication token
+- [ ] `VERCEL-ORG-ID` - Vercel organization or team ID
+- [ ] `VERCEL-PROJECT-ID` - Vercel project ID for confradar frontend
 
 **Note**: If secrets don't exist in Key Vault yet:
 1. Create Vercel API token: https://vercel.com/account/tokens
 2. Get Org ID from Vercel team settings or run `vercel link` in `web/` directory
 3. Get Project ID from Vercel project settings or `.vercel/project.json` after linking
-4. Store all three in Azure Key Vault for future reference
+4. Add all three to Azure Key Vault with the exact names above
 
-## 3. Configure GitHub Repository Secrets
-
-Go to: https://github.com/orgroman/confradar/settings/secrets/actions
-
-Add three repository secrets:
-- [ ] `VERCEL_TOKEN` (from Azure Key Vault)
-- [ ] `VERCEL_ORG_ID` (from Azure Key Vault)
-- [ ] `VERCEL_PROJECT_ID` (from Azure Key Vault)
+**Important**: The workflow retrieves these automatically from Key Vault. You do NOT need to add them to GitHub Secrets.
 
 ## 4. Configure Vercel Environment Variables
 

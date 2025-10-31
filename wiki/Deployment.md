@@ -15,18 +15,26 @@ The deployment process is handled by the `.github/workflows/deploy-vercel.yml` w
 
 ### Prerequisites
 
-The following secrets must be configured in GitHub repository secrets:
+The workflow automatically retrieves Vercel secrets from **Azure Key Vault** (`kvconfradar`) using GitHub Actions integration.
 
-- `VERCEL_TOKEN` - Vercel API token for authentication
-- `VERCEL_ORG_ID` - Vercel organization/team ID
-- `VERCEL_PROJECT_ID` - Vercel project ID for the confradar frontend
+**Required GitHub Secrets for Azure Authentication**:
+- `AZURE_CLIENT_ID` - Azure Service Principal Client ID
+- `AZURE_TENANT_ID` - Azure Tenant ID
+- `AZURE_SUBSCRIPTION_ID` - Azure Subscription ID (8592e500-3312-4991-9d2a-2b97e43b1810)
 
-These secrets are stored in Azure Key Vault (`kvconfradar`) and can be synced to GitHub Secrets.
+**Vercel Secrets in Azure Key Vault**:
+- `VERCEL-TOKEN` - Vercel API token for authentication
+- `VERCEL-ORG-ID` - Vercel organization/team ID
+- `VERCEL-PROJECT-ID` - Vercel project ID for the confradar frontend
+
+The workflow uses OpenID Connect (OIDC) to authenticate with Azure and retrieve secrets from the Key Vault without storing credentials in GitHub.
 
 ### How It Works
 
 1. **On Pull Request**:
    - Workflow triggers when PR is opened/updated with `web/**` changes
+   - Authenticates with Azure using OIDC
+   - Retrieves Vercel secrets from Azure Key Vault
    - Installs Vercel CLI
    - Pulls Vercel environment info for preview environment
    - Builds the Next.js application
@@ -35,6 +43,8 @@ These secrets are stored in Azure Key Vault (`kvconfradar`) and can be synced to
 
 2. **On Merge to Main**:
    - Workflow triggers when changes are pushed to `main`
+   - Authenticates with Azure using OIDC
+   - Retrieves Vercel secrets from Azure Key Vault
    - Installs Vercel CLI
    - Pulls Vercel environment info for production environment
    - Builds the Next.js application with production settings
@@ -102,12 +112,19 @@ To manually deploy from your local machine:
 
 ### Troubleshooting
 
+**Azure authentication fails**:
+- Verify Azure Service Principal is configured correctly in GitHub repository secrets
+- Check `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID` are set
+- Ensure the Service Principal has access to the Key Vault (`kvconfradar`)
+- Verify federated credentials are configured for GitHub Actions OIDC
+
 **Deployment fails with authentication error**:
-- Verify `VERCEL_TOKEN` secret is set correctly in GitHub repository secrets
+- Check Azure Key Vault access permissions for the Service Principal
+- Verify Vercel secrets exist in Key Vault with correct names: `VERCEL-TOKEN`, `VERCEL-ORG-ID`, `VERCEL-PROJECT-ID`
 - Check token hasn't expired in Vercel settings
 
 **Deployment fails with project not found**:
-- Verify `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` are correct
+- Verify `VERCEL-ORG-ID` and `VERCEL-PROJECT-ID` values in Azure Key Vault are correct
 - Check project exists in Vercel dashboard
 
 **Build fails**:

@@ -9,6 +9,11 @@ This PR implements automated Vercel deployment for the Next.js frontend with pro
 **File**: `.github/workflows/deploy-vercel.yml`
 
 **Features**:
+- **Azure Key Vault Integration**: Automatically retrieves Vercel secrets from Azure Key Vault
+  - Uses OpenID Connect (OIDC) for secure authentication
+  - No need to manually sync secrets to GitHub
+  - Centralized secret management in Azure
+  
 - **Preview Deployments**: Automatically triggered on PRs with `web/**` changes
   - Deploys to unique Vercel preview URL
   - Posts deployment URL as PR comment
@@ -21,18 +26,28 @@ This PR implements automated Vercel deployment for the Next.js frontend with pro
 
 **Implementation Details**:
 - Uses Vercel CLI (Option B from requirements) for better control and transparency
+- Integrates with Azure Key Vault using azure/login and azure/get-keyvault-secrets actions
 - Robust URL extraction with error handling
-- Proper GITHUB_TOKEN permissions for security (contents: read, pull-requests: write, deployments: write)
+- Proper GITHUB_TOKEN permissions for security (contents: read, pull-requests: write, deployments: write, id-token: write)
 - Working directory set to `web/` for all Vercel operations
 - Separate build and deploy steps for better debugging
 
 ### ✅ Secret Management
-**Required Secrets** (to be configured from Azure Key Vault):
-- `VERCEL_TOKEN` - Vercel API authentication token
-- `VERCEL_ORG_ID` - Vercel organization/team ID
-- `VERCEL_PROJECT_ID` - Vercel project ID
+**Azure Key Vault Integration**:
 
-These secrets are referenced in the workflow but must be manually configured in GitHub repository secrets. The workflow will fail gracefully if secrets are missing, with clear error messages.
+The workflow automatically retrieves Vercel secrets from Azure Key Vault (`kvconfradar`) using GitHub Actions OIDC authentication.
+
+**Required GitHub Secrets** (for Azure authentication):
+- `AZURE_CLIENT_ID` - Azure Service Principal Client ID
+- `AZURE_TENANT_ID` - Azure Tenant ID
+- `AZURE_SUBSCRIPTION_ID` - Azure Subscription ID (8592e500-3312-4991-9d2a-2b97e43b1810)
+
+**Vercel Secrets in Azure Key Vault** (retrieved automatically):
+- `VERCEL-TOKEN` - Vercel API authentication token
+- `VERCEL-ORG-ID` - Vercel organization/team ID
+- `VERCEL-PROJECT-ID` - Vercel project ID
+
+The workflow uses OpenID Connect (OIDC) to authenticate with Azure without storing credentials. Vercel secrets are retrieved on-demand from Key Vault during each workflow run.
 
 ### ✅ Documentation
 
@@ -148,21 +163,29 @@ From the original issue:
 
 To activate the deployment workflow:
 
-1. **Retrieve secrets from Azure Key Vault** (`kvconfradar`):
-   - VERCEL_TOKEN
-   - VERCEL_ORG_ID
-   - VERCEL_PROJECT_ID
+1. **Configure Azure Service Principal for GitHub Actions**:
+   - Create or use existing Azure Service Principal
+   - Configure federated credentials for GitHub Actions OIDC
+   - Grant Service Principal access to Key Vault (`kvconfradar`)
+   - See: https://learn.microsoft.com/en-us/azure/developer/github/github-actions-key-vault
 
-2. **Add secrets to GitHub**:
+2. **Add Azure authentication secrets to GitHub**:
    - Go to: https://github.com/orgroman/confradar/settings/secrets/actions
-   - Add all three secrets
+   - Add `AZURE_CLIENT_ID` (Service Principal Client ID)
+   - Add `AZURE_TENANT_ID` (Azure Tenant ID)
+   - Add `AZURE_SUBSCRIPTION_ID` (Value: 8592e500-3312-4991-9d2a-2b97e43b1810)
 
-3. **Configure Vercel project**:
+3. **Verify Vercel secrets in Azure Key Vault**:
+   - Ensure `VERCEL-TOKEN`, `VERCEL-ORG-ID`, and `VERCEL-PROJECT-ID` exist in Key Vault
+   - Workflow will retrieve these automatically
+
+4. **Configure Vercel project**:
    - Verify root directory is set to `web/`
    - Add environment variables (NEXT_PUBLIC_API_URL) for preview and production
 
-4. **Test**:
+5. **Test**:
    - Create test PR with web/ change to verify preview deployment
+   - Merge to main to verify production deployment
    - Merge to main to verify production deployment
 
 See `docs/VERCEL_SETUP.md` for detailed instructions.
