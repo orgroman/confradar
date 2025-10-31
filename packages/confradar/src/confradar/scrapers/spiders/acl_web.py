@@ -81,7 +81,9 @@ class ACLWebSpider(scrapy.Spider):
             # Extract title and link
             title_cell = cells[0]
             # Get all text content from the cell (including nested elements)
-            name = " ".join(title_cell.css("*::text, ::text").getall()).strip()
+            name = " ".join(
+                title_cell.css("*::text, ::text").getall()
+            ).strip()
             if not name:
                 self.logger.debug("Skipping row with empty name")
                 continue
@@ -97,10 +99,14 @@ class ACLWebSpider(scrapy.Spider):
             # country = ' '.join(cells[3].css('*::text, ::text').getall()).strip()
 
             # Extract submission deadline (column 4)
-            deadline_text = " ".join(cells[4].css("*::text, ::text").getall()).strip()
+            deadline_text = " ".join(
+                cells[4].css("*::text, ::text").getall()
+            ).strip()
 
             # Extract event dates (column 5)
-            event_dates_text = " ".join(cells[5].css("*::text, ::text").getall()).strip()
+            event_dates_text = " ".join(
+                cells[5].css("*::text, ::text").getall()
+            ).strip()
 
             # Extract year from name or event dates
             year = self._extract_year(name)
@@ -157,20 +163,29 @@ class ACLWebSpider(scrapy.Spider):
                         conferences_map[key]["deadlines"].append(deadline)
                         existing_dates.add(deadline["due_date"])
 
-            self.logger.debug(f"Processed: name={name[:50]}, year={year}, key={key}")
+            self.logger.debug(
+                f"Processed: name={name[:50]}, year={year}, key={key}"
+            )
 
         # Yield all unique conferences
         for conf_data in conferences_map.values():
             if not conf_data["key"] or not conf_data["name"]:
                 self.logger.warning(
-                    f"Skipping conference with invalid key or name: key={conf_data['key']}, name={conf_data['name'][:50]}"
+                    (
+                        "Skipping conference with invalid key or name: "
+                        f"key={conf_data['key']}, name={conf_data['name'][:50]}"
+                    )
                 )
                 continue
 
             yield ConferenceItem(**conf_data)
-            self.logger.debug(f"Found: {conf_data['name']} (deadlines: {len(conf_data['deadlines'])})")
+            self.logger.debug(
+                f"Found: {conf_data['name']} (deadlines: {len(conf_data['deadlines'])})"
+            )
 
-        self.logger.info(f"Finished parsing {response.url} - found {len(conferences_map)} unique conferences")
+        self.logger.info(
+            f"Finished parsing {response.url} - found {len(conferences_map)} unique conferences"
+        )
 
     def _parse_date(self, date_str: str) -> datetime | None:
         """Parse date string like '15 May 2025' or '2 Jun 2025'."""
@@ -186,7 +201,9 @@ class ACLWebSpider(scrapy.Spider):
 
         for fmt in formats:
             try:
-                return datetime.strptime(date_str.strip(), fmt).replace(tzinfo=timezone.utc)
+                return datetime.strptime(date_str.strip(), fmt).replace(
+                    tzinfo=timezone.utc
+                )
             except ValueError:
                 continue
 
@@ -211,7 +228,9 @@ class ACLWebSpider(scrapy.Spider):
             # Fallback: first significant word (skip common words)
             words = re.findall(r"\w+", name.lower())
             skip_words = {"the", "a", "an", "on", "for", "of", "in", "at", "to"}
-            significant_words = [w for w in words if w not in skip_words and len(w) > 2]
+            significant_words = [
+                w for w in words if w not in skip_words and len(w) > 2
+            ]
             key = significant_words[0] if significant_words else (words[0] if words else "unknown")
 
         if year:

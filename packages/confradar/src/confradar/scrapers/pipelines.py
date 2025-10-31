@@ -73,7 +73,11 @@ class DatabasePipeline:
 
         try:
             # Find or create conference
-            conference = self.session.query(Conference).filter_by(key=item["key"]).first()
+            conference = (
+                self.session.query(Conference)
+                .filter_by(key=item["key"]) 
+                .first()
+            )
 
             if not conference:
                 conference = Conference(
@@ -99,7 +103,12 @@ class DatabasePipeline:
                 source = Source(
                     conference_id=conference.id,
                     url=source_url,
-                    notes=f"Scraped by {item.get('source', 'unknown')} on {item.get('scraped_at', '')}",
+                    notes=(
+                        "Scraped by "
+                        f"{item.get('source', 'unknown')} "
+                        "on "
+                        f"{item.get('scraped_at', '')}"
+                    ),
                 )
                 self.session.add(source)
                 self.session.flush()
