@@ -1,0 +1,202 @@
+[
+  {
+    "id": "neurips-2025",
+    "name": "NeurIPS 2025 - Neural Information Processing Systems",
+    "description": "The premier conference on neural information processing systems, covering machine learning, artificial intelligence, statistics, and neuroscience.",
+    "website": "https://neurips.cc",
+    "startDate": "2025-12-08",
+    "endDate": "2025-12-14",
+    "location": {
+      "venue": "Vancouver Convention Centre",
+      "city": "Vancouver",
+      "country": "Canada",
+      "coordinates": {
+        "lat": 49.2827,
+        "lng": -123.1207
+      }
+    },
+    "deadlines": [
+      {
+        "name": "Abstract Submission",
+        "date": "2025-05-15",
+        "timezone": "AoE"
+      },
+      {
+        "name": "Full Paper Submission",
+        "date": "2025-05-22",
+        "timezone": "AoE"
+      },
+      {
+        "name": "Author Notification",
+        "date": "2025-09-20"
+      }
+    ],
+    "tags": ["AI/ML", "Computer Science", "Deep Learning"]
+  },
+  {
+    "id": "icml-2025",
+    "name": "ICML 2025 - International Conference on Machine Learning",
+    "description": "Leading international conference for research on machine learning, covering theory, algorithms, and applications.",
+    "website": "https://icml.cc",
+    "startDate": "2025-07-13",
+    "endDate": "2025-07-19",
+    "location": {
+      "venue": "Hawaii Convention Center",
+      "city": "Honolulu",
+      "country": "USA",
+      "coordinates": {
+        "lat": 21.3099,
+        "lng": -157.8581
+      }
+    },
+    "deadlines": [
+      {
+        "name": "Paper Submission",
+        "date": "2025-02-01",
+        "timezone": "AoE"
+      },
+      {
+        "name": "Rebuttal Period",
+        "date": "2025-04-15"
+      },
+      {
+        "name": "Acceptance Notification",
+        "date": "2025-05-10"
+      }
+    ],
+    "tags": ["AI/ML", "Computer Science", "Machine Learning"]
+  },
+  {
+    "id": "cvpr-2025",
+    "name": "CVPR 2025 - Computer Vision and Pattern Recognition",
+    "description": "The premier annual computer vision event comprising the main conference and several co-located workshops and short courses.",
+    "website": "https://cvpr2025.thecvf.com",
+    "startDate": "2025-06-16",
+    "endDate": "2025-06-20",
+    "location": {
+      "venue": "Music City Center",
+      "city": "Nashville",
+      "country": "USA",
+      "coordinates": {
+        "lat": 36.1627,
+        "lng": -86.7816
+      }
+    },
+    "deadlines": [
+      {
+        "name": "Paper Submission",
+        "date": "2024-11-15",
+        "timezone": "Pacific Time"
+      },
+      {
+        "name": "Supplementary Material",
+        "date": "2024-11-22",
+        "timezone": "Pacific Time"
+      },
+      {
+        "name": "Notification to Authors",
+        "date": "2025-02-27"
+      }
+    ],
+    "tags": ["Computer Vision", "AI/ML", "Computer Science"]
+  },
+  {
+    "id": "acl-2025",
+    "name": "ACL 2025 - Association for Computational Linguistics",
+    "description": "The premier conference of the Association for Computational Linguistics, covering all aspects of natural language processing and computational linguistics.",
+    "website": "https://2025.aclweb.org",
+    "startDate": "2025-07-27",
+    "endDate": "2025-08-01",
+    "location": {
+      "venue": "Vienna International Centre",
+      "city": "Vienna",
+      "country": "Austria",
+      "coordinates": {
+        "lat": 48.2082,
+        "lng": 16.3738
+      }
+    },
+    "deadlines": [
+      {
+        "name": "Paper Submission",
+        "date": "2025-02-15",
+        "timezone": "AoE"
+      },
+      {
+        "name": "Commitment Deadline",
+        "date": "2025-05-17"
+      },
+      {
+        "name": "Camera-Ready",
+        "date": "2025-06-10"
+      }
+    ],
+    "tags": ["NLP", "AI/ML", "Computer Science", "Linguistics"]
+  },
+  {
+    "id": "siggraph-2025",
+    "name": "SIGGRAPH 2025",
+    "description": "The world's largest conference on computer graphics and interactive techniques, showcasing the latest in CG research and applications.",
+    "website": "https://s2025.siggraph.org",
+    "startDate": "2025-08-10",
+    "endDate": "2025-08-14",
+    "location": {
+      "venue": "Colorado Convention Center",
+      "city": "Denver",
+      "country": "USA",
+      "coordinates": {
+        "lat": 39.7392,
+        "lng": -104.9903
+      }
+    },
+    "deadlines": [
+      {
+        "name": "Technical Papers",
+        "date": "2025-01-22",
+        "timezone": "Pacific Time"
+      },
+      {
+        "name": "Posters",
+        "date": "2025-04-15"
+      },
+      {
+        "name": "Emerging Technologies",
+        "date": "2025-03-01"
+      }
+    ],
+    "tags": ["Computer Graphics", "Computer Science", "Interactive Techniques"]
+  },
+  {
+    "id": "emnlp-2025",
+    "name": "EMNLP 2025 - Empirical Methods in Natural Language Processing",
+    "description": "A leading conference in the area of natural language processing and computational linguistics.",
+    "website": "https://2025.emnlp.org",
+    "startDate": "2025-11-12",
+    "endDate": "2025-11-16",
+    "location": {
+      "venue": "Miami Beach Convention Center",
+      "city": "Miami",
+      "country": "USA",
+      "coordinates": {
+        "lat": 25.7617,
+        "lng": -80.1918
+      }
+    },
+    "deadlines": [
+      {
+        "name": "Paper Submission",
+        "date": "2025-06-15",
+        "timezone": "AoE"
+      },
+      {
+        "name": "Author Notification",
+        "date": "2025-09-06"
+      },
+      {
+        "name": "Camera-Ready",
+        "date": "2025-10-01"
+      }
+    ],
+    "tags": ["NLP", "AI/ML", "Computer Science"]
+  }
+]

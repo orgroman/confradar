@@ -366,15 +366,27 @@ Settings loaded via Pydantic:
 
 ## Security Considerations
 
-- **API Keys**: Stored in environment variables, never committed
-- **Database**: Use read-only users for serving layer
-- **Web Scraping**: Respect robots.txt, rate limits
-- **LLM**: Sanitize inputs to avoid prompt injection
-- **Docker**: Run containers as non-root users
+## Secret Management (Azure Key Vault)
 
-## Scalability
+All project secrets (API keys, credentials, etc.) are managed in **Azure Key Vault** (`kvconfradar`).
 
-### Current Limitations
+**Azure Subscription ID:** `8592e500-3312-4991-9d2a-2b97e43b1810`
+
+- Secrets are accessed via Azure MCP (Managed Control Plane) for both local development and CI/CD workflows.
+- The OpenAI API key and Vercel v0 API key are stored in the key vault for backend and frontend usage.
+- If automation or GitHub Actions require secrets, they can be synced from Azure Key Vault to GitHub repository secrets.
+- Never commit secrets to the repository; always use secure vault access.
+
+**Access Instructions:**
+1. Authenticate with Azure MCP to access `kvconfradar`.
+2. Retrieve required secrets for local `.env` files or CI/CD workflows.
+3. For frontend (Vercel) development, use the Vercel v0 API key from the vault.
+4. For LLM/OpenAI, use the OpenAI API key from the vault.
+
+**Best Practices:**
+- Use Azure Key Vault as the single source of truth for all secrets.
+- Only sync secrets to GitHub if required for automation.
+- Rotate secrets regularly and audit access permissions.
 
 - Single-threaded Scrapy per source
 - SQLite limits concurrent writes

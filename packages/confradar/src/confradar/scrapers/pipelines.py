@@ -99,24 +99,49 @@ class DatabasePipeline:
                 source = Source(
                     conference_id=conference.id,
                     url=source_url,
-                    notes=f"Scraped by {item.get('source', 'unknown')} on {item.get('scraped_at', '')}",
+                    notes=(
+                        "Scraped by "
+                        f"{item.get('source', 'unknown')} "
+                        "on "
+                        f"{item.get('scraped_at', '')}"
+                    ),
                 )
                 self.session.add(source)
                 self.session.flush()
 
             # Process deadlines
             for deadline_data in item.get("deadlines", []):
-                # Parse due_at (ISO format string to datetime)
-                from datetime import datetime
+                # Parse due_date (could be date object, datetime object, or ISO string)
+                from datetime import date, datetime
 
-                if isinstance(deadline_data.get("due_at"), str):
+                # Handle both due_at and due_date keys (for compatibility)
+                due_value = deadline_data.get("due_date") or deadline_data.get("due_at")
+
+                if not due_value:
+                    # Skip deadlines without dates
+                    spider.logger.debug(f"Skipping deadline without date for {item['key']}")
+                    continue
+
+                # Convert to date object
+                if isinstance(due_value, str):
                     try:
-                        due_date = datetime.fromisoformat(deadline_data["due_at"])
+                        # Try parsing as ISO format datetime first
+                        due_date_obj = datetime.fromisoformat(due_value).date()
                     except ValueError:
-                        # Skip invalid dates
-                        continue
+                        try:
+                            # Try parsing as date string
+                            due_date_obj = date.fromisoformat(due_value)
+                        except ValueError:
+                            # Skip invalid dates
+                            spider.logger.warning(f"Invalid date format: {due_value}")
+                            continue
+                elif isinstance(due_value, datetime):
+                    due_date_obj = due_value.date()
+                elif isinstance(due_value, date):
+                    due_date_obj = due_value
                 else:
-                    due_date = deadline_data.get("due_at")
+                    spider.logger.warning(f"Unknown date type: {type(due_value)}")
+                    continue
 
                 # Check if deadline already exists
                 existing_deadline = (
@@ -124,7 +149,7 @@ class DatabasePipeline:
                     .filter_by(
                         conference_id=conference.id,
                         kind=deadline_data.get("kind", "submission"),
-                        due_date=due_date,
+                        due_date=due_date_obj,
                     )
                     .first()
                 )
@@ -133,7 +158,7 @@ class DatabasePipeline:
                     deadline = Deadline(
                         conference_id=conference.id,
                         kind=deadline_data.get("kind", "submission"),
-                        due_date=due_date,
+                        due_date=due_date_obj,
                         timezone=deadline_data.get("timezone"),
                         source_id=source.id,
                     )

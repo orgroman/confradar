@@ -1,8 +1,6 @@
-# Copilot Instructions for Confradar
+# Instructions for Confradar
 
-Default project rules and conventions for this repository.  
-Copilot must follow these when suggesting code, edits, or documentation.
-
+Default project rules and conventions for this repository.
 ---
 
 ## Documentation and Wiki
@@ -37,21 +35,12 @@ Copilot must follow these when suggesting code, edits, or documentation.
 - Prefer deterministic tests; isolate or mock any external I/O.  
 - New features without tests are considered incomplete.
 
-## Code and Architecture
-- Follow existing patterns and style.  
-- Do not introduce new dependencies, frameworks, or external integrations without explicit justification.  
-- Do not rename or restructure existing modules unless documented and reviewed.  
-- Never inline secrets, tokens, or credentials — use environment variables or vault references.  
-- Log and handle errors properly, especially in async or ingestion paths.
-
-## Scope and Ownership
-- Each new background process or ingestion job must have a documented owner and failure surface.  
-- If ownership is unclear, open a `P0` issue and tag it for review.
 
 ## UI and Frontend
 - Reuse shared components before creating new ones.  
 - Keep UI consistent with the design system or shared library.  
 - Frontend logic handles presentation and local state; backend/shared utils handle correctness and filtering.
+- You're highly encouaged to use vercel v0 MCP for frontend development.
 
 ---
 

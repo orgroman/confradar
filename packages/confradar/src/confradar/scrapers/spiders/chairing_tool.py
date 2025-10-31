@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from datetime import datetime, timezone
 
 import scrapy
-from scrapy.http import Response
+from scrapy.http import Request, Response
 
 from confradar.scrapers.items import ConferenceItem
 
@@ -30,7 +30,7 @@ class ChairingToolSpider(scrapy.Spider):
         "DOWNLOAD_DELAY": 2,
     }
 
-    def parse(self, response: Response) -> Iterator[ConferenceItem]:
+    def parse(self, response: Response) -> Iterator[ConferenceItem | Request]:
         """Parse ChairingTool conferences page."""
         self.logger.info(f"Parsing {response.url}")
 

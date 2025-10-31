@@ -44,7 +44,7 @@ class AIDeadlinesSpider(scrapy.Spider):
         self.logger.info(f"Parsing {response.url}")
 
         # Build a dict of conferences first to avoid duplicates
-        conferences = {}
+        conferences: dict[str, dict[str, Any]] = {}
 
         # Find all conference links
         conference_links = response.css('a[href*="/conference?id="]')

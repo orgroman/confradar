@@ -45,6 +45,13 @@ jobs:
       - name: Sync workspace deps (dev extras)
         run: uv sync --extra dev
 
+      - name: Run DB migrations
+        env:
+          DATABASE_URL: postgresql+psycopg://confradar:confradar@localhost:5432/confradar_test
+        run: |
+          # Apply Alembic migrations to initialize schema before tests
+          uv run alembic upgrade head
+
       - name: Run tests with coverage
         env:
           DATABASE_URL: postgresql+psycopg://confradar:confradar@localhost:5432/confradar_test

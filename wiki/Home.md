@@ -3,7 +3,30 @@
 Welcome to the **ConfRadar** documentation wiki! ConfRadar is an intelligent agent that automatically tracks academic conference deadlines by crawling CFP pages, extracting key dates with LLMs, detecting changes over time, and syncing to Notion or Google Docs.
 
 ## Quick Links
+## Secret Management
 
+All project secrets (API keys, credentials, etc.) are managed securely in **Azure Key Vault** (`kvconfradar`).
+
+**Azure Subscription ID:** `8592e500-3312-4991-9d2a-2b97e43b1810`
+
+- Access secrets using the Azure MCP (Managed Control Plane) for development and CI/CD.
+- The OpenAI API key and Vercel v0 API key for frontend development are stored in the key vault.
+- If needed, secrets from Azure Key Vault can be synced to GitHub repository secrets for workflows and deployments.
+- For any issues with secret access, contact the project owner or check Azure Key Vault permissions.
+
+**How to access secrets:**
+
+1. Use Azure MCP to authenticate and retrieve secrets from `kvconfradar`.
+2. Reference secrets in your local `.env` or CI/CD workflows using Azure Key Vault integration.
+3. For frontend (Vercel) development, use the Vercel v0 API key from the vault.
+4. For LLM/OpenAI access, use the OpenAI API key from the vault.
+
+**Best Practices:**
+- Never commit secrets to the repository.
+- Prefer direct Azure Key Vault access for all environments.
+- Only sync secrets to GitHub if required for automation.
+
+See [Architecture](Architecture) and [Development Guide](Development-Guide) for more details on environment configuration.
 - [Project Overview](Overview)
 - [Architecture](Architecture)
 - [Getting Started](Getting-Started)

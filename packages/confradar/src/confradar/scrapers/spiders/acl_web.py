@@ -69,6 +69,9 @@ class ACLWebSpider(scrapy.Spider):
         rows = response.css("table tr")[1:]  # Skip header
         self.logger.info(f"Found {len(rows)} event rows")
 
+        # Group deadlines by conference key to handle duplicates
+        conferences_map: dict[str, dict[str, Any]] = {}
+
         for row in rows:
             cells = row.css("td")
             if len(cells) < 6:
@@ -109,12 +112,6 @@ class ACLWebSpider(scrapy.Spider):
 
             self.logger.debug(f"Processing: name={name[:50]}, year={year}, key={key}")
 
-            if not key or not name:
-                self.logger.warning(
-                    f"Skipping conference with invalid key or name: key={key}, name={name[:50]}"
-                )
-                continue
-
             # Build deadlines list
             deadlines: list[dict[str, Any]] = []
 
@@ -138,19 +135,47 @@ class ACLWebSpider(scrapy.Spider):
             elif detail_link:
                 homepage = detail_link
 
-            yield ConferenceItem(
-                key=key,
-                name=name,
-                year=year,
-                homepage=homepage,
-                deadlines=deadlines,
-                source=self.name,
-                scraped_at=datetime.now(timezone.utc).isoformat(),
-                url=response.url,
-            )
-            self.logger.debug(f"Found: {name} (deadlines: {len(deadlines)})")
+            # Aggregate by key (handle multiple rows for same conference)
+            if key not in conferences_map:
+                conferences_map[key] = {
+                    "key": key,
+                    "name": name,
+                    "year": year,
+                    "homepage": homepage,
+                    "deadlines": [],
+                    "source": self.name,
+                    "scraped_at": datetime.now(timezone.utc).isoformat(),
+                    "url": response.url,
+                }
 
-        self.logger.info(f"Finished parsing {response.url}")
+            # Add deadline to conference if present
+            if deadlines:
+                # Avoid duplicate deadlines for the same conference
+                existing_dates = {d["due_date"] for d in conferences_map[key]["deadlines"]}
+                for deadline in deadlines:
+                    if deadline["due_date"] not in existing_dates:
+                        conferences_map[key]["deadlines"].append(deadline)
+                        existing_dates.add(deadline["due_date"])
+
+            self.logger.debug(f"Processed: name={name[:50]}, year={year}, key={key}")
+
+        # Yield all unique conferences
+        for conf_data in conferences_map.values():
+            if not conf_data["key"] or not conf_data["name"]:
+                self.logger.warning(
+                    "Skipping conference with invalid key or name: "
+                    f"key={conf_data['key']}, name={conf_data['name'][:50]}"
+                )
+                continue
+
+            yield ConferenceItem(**conf_data)
+            self.logger.debug(
+                f"Found: {conf_data['name']} (deadlines: {len(conf_data['deadlines'])})"
+            )
+
+        self.logger.info(
+            f"Finished parsing {response.url} - found {len(conferences_map)} unique conferences"
+        )
 
     def _parse_date(self, date_str: str) -> datetime | None:
         """Parse date string like '15 May 2025' or '2 Jun 2025'."""

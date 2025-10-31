@@ -9,6 +9,62 @@ This guide covers development workflows for the ConfRadar monorepo with uv and t
 - Database: PostgreSQL (Docker) or SQLite (tests only)
 - Package: `packages/confradar`
 
+## Frontend (Next.js) Development
+
+We provide a Dockerized Next.js frontend located in `web/`.
+
+- Dev server runs on http://localhost:3100
+- Hot reload is enabled via bind mounts and polling watchers
+- Uses Node 20 Alpine base image
+
+### Start the frontend only
+
+```powershell
+# From repo root
+docker compose up -d web
+
+# View logs
+docker compose logs -f web
+```
+
+### Start all services (including frontend)
+
+```powershell
+docker compose up -d
+```
+
+### Notes
+
+- The Dagster UI uses port 3000; the frontend uses port 3100 to avoid conflicts.
+- If file changes don't trigger hot reload, ensure polling is enabled (it's set in docker-compose by default).
+- To rebuild the image after dependency changes (package.json):
+
+```powershell
+docker compose build web; docker compose up -d web
+```
+
+## Secret Management (Azure Key Vault)
+
+All secrets (API keys, credentials) are managed in **Azure Key Vault** (`kvconfradar`).
+
+**Azure Subscription ID:** `8592e500-3312-4991-9d2a-2b97e43b1810`
+
+- Access secrets using Azure MCP for local development and CI/CD.
+- OpenAI API key and Vercel v0 API key are stored in the vault.
+- If needed, sync secrets from Azure Key Vault to GitHub repository secrets for automation.
+- Never commit secrets to the repository.
+
+**How to access secrets:**
+1. Authenticate with Azure MCP to access `kvconfradar`.
+2. Retrieve secrets for your local `.env` or CI/CD workflows.
+3. For frontend (Vercel) development, use the Vercel v0 API key from the vault.
+4. For LLM/OpenAI, use the OpenAI API key from the vault.
+
+**Best Practices:**
+- Use Azure Key Vault as the single source of truth for all secrets.
+- Only sync secrets to GitHub if required for automation.
+- Rotate secrets regularly and audit access permissions.
+
 ```powershell
 uv sync --extra dev
 cd packages/confradar

@@ -8,7 +8,7 @@ from collections.abc import Iterator
 from datetime import datetime, timezone
 
 import scrapy
-from scrapy.http import Response
+from scrapy.http import Request, Response
 
 from confradar.scrapers.items import ConferenceItem
 
@@ -28,7 +28,7 @@ class WikiCFPSpider(scrapy.Spider):
     name = "wikicfp"
     allowed_domains = ["wikicfp.com"]
 
-    def __init__(self, category: str = None, *args, **kwargs):
+    def __init__(self, category: str | None = None, *args, **kwargs):
         """Initialize spider.
 
         Args:
@@ -50,7 +50,7 @@ class WikiCFPSpider(scrapy.Spider):
         "DOWNLOAD_DELAY": 2,
     }
 
-    def parse(self, response: Response) -> Iterator[ConferenceItem]:
+    def parse(self, response: Response) -> Iterator[ConferenceItem | Request]:
         """Parse WikiCFP page."""
         self.logger.info(f"Parsing {response.url}")
 
