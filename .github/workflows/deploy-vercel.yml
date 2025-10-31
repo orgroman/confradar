@@ -21,6 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     # Note: This workflow runs independently. Ensure Frontend CI passes before merging.
     # Consider enabling branch protection rules to require Frontend CI before merge.
+    permissions:
+      contents: read        # Read repository contents
+      pull-requests: write  # Post comments on PRs
+      deployments: write    # Create deployment status
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
