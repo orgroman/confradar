@@ -30,8 +30,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
+          # Avoid cache errors when no lockfile is present; caching can be re-enabled once lockfile is committed
 
       - name: Install dependencies (ci if lockfile, else install)
         shell: bash

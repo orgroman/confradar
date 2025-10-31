@@ -27,6 +27,7 @@
     "zustand": "5.0.8"
   },
   "devDependencies": {
+    "eslint-config-next": "^15.0.0",
     "@tailwindcss/postcss": "^4.1.9",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.0",
