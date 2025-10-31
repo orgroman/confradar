@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { render, screen } from "@testing-library/react"
-import { ConferenceCard } from "../../components/ConferenceCard"
-import type { Conference } from "../../lib/api/types"
+import { ConferenceCard } from "@/components/ConferenceCard"
+import type { Conference } from "@/lib/api/types"
 
 const mockConference: Conference = {
   id: "test-conf",
