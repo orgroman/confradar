@@ -171,10 +171,8 @@ class ACLWebSpider(scrapy.Spider):
         for conf_data in conferences_map.values():
             if not conf_data["key"] or not conf_data["name"]:
                 self.logger.warning(
-                    (
-                        "Skipping conference with invalid key or name: "
-                        f"key={conf_data['key']}, name={conf_data['name'][:50]}"
-                    )
+                    "Skipping conference with invalid key or name: "
+                    f"key={conf_data['key']}, name={conf_data['name'][:50]}"
                 )
                 continue
 
