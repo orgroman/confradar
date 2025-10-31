@@ -42,8 +42,8 @@ jobs:
             npm install
           fi
 
-      - name: Run type check
-        run: npm run typecheck
+      # Type checking is performed during `next build`; running tsc separately can
+      # diverge from Next's resolver behavior. We rely on build-time checks.
 
       - name: Run linter
         run: npm run lint
