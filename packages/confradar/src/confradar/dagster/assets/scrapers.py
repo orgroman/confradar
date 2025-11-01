@@ -14,8 +14,8 @@ from confradar.scrapers.spiders.acl_web import ACLWebSpider
 from confradar.scrapers.spiders.ai_deadlines import AIDeadlinesSpider
 from confradar.scrapers.spiders.chairing_tool import ChairingToolSpider
 from confradar.scrapers.spiders.elra import ELRASpider
-from confradar.scrapers.spiders.wikicfp import WikiCFPSpider
 from confradar.scrapers.spiders.seeded import SeededSpider
+from confradar.scrapers.spiders.wikicfp import WikiCFPSpider
 
 
 def run_spider(spider_class) -> list[dict[str, Any]]:

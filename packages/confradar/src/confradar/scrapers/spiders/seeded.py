@@ -4,7 +4,7 @@ This spider yields a curated set of core conference series entries to
 bootstrap the knowledge base and ensure canonical keys exist early.
 
 It performs a lightweight request to each homepage (primarily to record
-the source URL and avoid special-casing Scrapy flow). No parsing is done; 
+the source URL and avoid special-casing Scrapy flow). No parsing is done;
 we simply emit ConferenceItem objects based on the curated list.
 
 Seeds include: ACL, NeurIPS, ICML, ICLR, AAAI, EMNLP, CVPR, KDD.
@@ -16,20 +16,51 @@ from collections.abc import Iterator
 from datetime import datetime, timezone
 
 import scrapy
-from scrapy.http import Request, Response
+from scrapy.http import Response
 
 from confradar.scrapers.items import ConferenceItem
 
-
 SEEDS: list[dict[str, str]] = [
-    {"key": "acl", "name": "Association for Computational Linguistics (ACL)", "homepage": "https://www.aclweb.org/"},
-    {"key": "neurips", "name": "Conference on Neural Information Processing Systems (NeurIPS)", "homepage": "https://neurips.cc/"},
-    {"key": "icml", "name": "International Conference on Machine Learning (ICML)", "homepage": "https://icml.cc/"},
-    {"key": "iclr", "name": "International Conference on Learning Representations (ICLR)", "homepage": "https://iclr.cc/"},
-    {"key": "aaai", "name": "AAAI Conference on Artificial Intelligence (AAAI)", "homepage": "https://aaai.org/"},
-    {"key": "emnlp", "name": "Conference on Empirical Methods in Natural Language Processing (EMNLP)", "homepage": "https://www.emnlp.org/"},
-    {"key": "cvpr", "name": "IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)", "homepage": "https://cvpr.thecvf.com/"},
-    {"key": "kdd", "name": "ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD)", "homepage": "https://www.kdd.org/"},
+    {
+        "key": "acl",
+        "name": "Association for Computational Linguistics (ACL)",
+        "homepage": "https://www.aclweb.org/",
+    },
+    {
+        "key": "neurips",
+        "name": "Conference on Neural Information Processing Systems (NeurIPS)",
+        "homepage": "https://neurips.cc/",
+    },
+    {
+        "key": "icml",
+        "name": "International Conference on Machine Learning (ICML)",
+        "homepage": "https://icml.cc/",
+    },
+    {
+        "key": "iclr",
+        "name": "International Conference on Learning Representations (ICLR)",
+        "homepage": "https://iclr.cc/",
+    },
+    {
+        "key": "aaai",
+        "name": "AAAI Conference on Artificial Intelligence (AAAI)",
+        "homepage": "https://aaai.org/",
+    },
+    {
+        "key": "emnlp",
+        "name": "Conference on Empirical Methods in Natural Language Processing (EMNLP)",
+        "homepage": "https://www.emnlp.org/",
+    },
+    {
+        "key": "cvpr",
+        "name": "IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)",
+        "homepage": "https://cvpr.thecvf.com/",
+    },
+    {
+        "key": "kdd",
+        "name": "ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD)",
+        "homepage": "https://www.kdd.org/",
+    },
 ]
 
 
