@@ -152,6 +152,7 @@ See the repository [`README`](https://github.com/orgroman/confradar#readme) for 
 - **[Serving](Serving)** - Integration with Notion, Docs, and calendars
 - **[Evaluation](Evaluation)** - Metrics and testing approach
 - **[Development Guide](Development-Guide)** - Contributing and workflow
+- **[Deployment](Deployment)** - Deployment processes and CI/CD
 
 ## Contact & Contributions
 
