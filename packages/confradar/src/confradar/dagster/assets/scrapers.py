@@ -15,6 +15,7 @@ from confradar.scrapers.spiders.ai_deadlines import AIDeadlinesSpider
 from confradar.scrapers.spiders.chairing_tool import ChairingToolSpider
 from confradar.scrapers.spiders.elra import ELRASpider
 from confradar.scrapers.spiders.wikicfp import WikiCFPSpider
+from confradar.scrapers.spiders.seeded import SeededSpider
 
 
 def run_spider(spider_class) -> list[dict[str, Any]]:
@@ -165,6 +166,32 @@ def wikicfp_conferences() -> Output[list[dict[str, Any]]]:
                 MetadataValue.md("\n".join([f"- {item['name']}" for item in items[:5]]))
                 if items
                 else "No items scraped"
+            ),
+        },
+    )
+
+
+@asset(
+    description="Seed core conference series (no parsing)",
+    group_name="scrapers",
+)
+def seeded_conferences() -> Output[list[dict[str, Any]]]:
+    """Emit curated seed conferences as items via a simple spider.
+
+    This ensures canonical keys and homepages exist in storage even if other
+    scrapers are unavailable or rate-limited.
+    """
+    items = run_spider(SeededSpider)
+
+    return Output(
+        value=items,
+        metadata={
+            "count": len(items),
+            "source": "seeded",
+            "preview": (
+                MetadataValue.md("\n".join([f"- {item['name']}" for item in items[:8]]))
+                if items
+                else "No seeds emitted"
             ),
         },
     )

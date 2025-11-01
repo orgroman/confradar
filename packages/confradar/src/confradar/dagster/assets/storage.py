@@ -25,6 +25,7 @@ def store_conferences(
     chairing_tool_conferences: list[dict[str, Any]],
     elra_conferences: list[dict[str, Any]],
     wikicfp_conferences: list[dict[str, Any]],
+    seeded_conferences: list[dict[str, Any]],
 ) -> Output[dict[str, int]]:
     """Store all scraped conferences in the database.
 
@@ -48,6 +49,7 @@ def store_conferences(
         source_counts = {}
 
         for source_name, conferences in [
+            ("seeded", seeded_conferences),
             ("aideadlines", ai_deadlines_conferences),
             ("acl_web", acl_web_conferences),
             ("chairing_tool", chairing_tool_conferences),
