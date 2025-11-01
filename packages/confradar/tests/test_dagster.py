@@ -12,6 +12,9 @@ def test_dagster_definitions_load():
     # Check that we have assets defined
     assert hasattr(defs, "assets")
     assert len(defs.assets) == 7  # 6 scrapers (incl. seeded) + 1 storage
+    # Check that we have asset checks defined
+    assert hasattr(defs, "asset_checks")
+    assert len(defs.asset_checks) == 4  # 4 data quality checks
     # Check that we have jobs defined
     assert hasattr(defs, "jobs")
     assert len(defs.jobs) > 0
