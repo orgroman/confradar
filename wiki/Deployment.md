@@ -67,14 +67,18 @@ To link or verify the Vercel project:
    - Authorize GitHub access
    - Select the `orgroman/confradar` repository
 
-2. **Configure Project**:
-   - Set **Root Directory** to `web/`
+2. **Configure Project** (CRITICAL):
+   - **Root Directory**: MUST be set to `web/` in Vercel project settings
+   - Go to: Vercel Dashboard > Project > Settings > General > Root Directory
+   - Enter: `web/`
+   - Save the setting
    - Vercel will auto-detect Next.js and configure build settings
    - Add environment variables (see above)
 
 3. **Verify Integration**:
    - Check repository settings in GitHub
    - Ensure Vercel app is installed and has access
+   - Trigger a test deployment to verify configuration
    - Create a test PR to verify preview deployment works
 - **Output Directory**: `.next` (auto-detected)
 - **Install Command**: `npm install` (auto-detected)
@@ -142,12 +146,27 @@ To manually deploy from your local machine:
 - Ensure GitHub App has permissions to post comments
 - Check Vercel deployment logs for errors
 
-**Build fails**:
+**Build fails with "No Next.js version detected"**:
+
+This is the most common deployment error. It means Vercel can't find the Next.js installation.
+
+**Solution**:
+1. Open Vercel Dashboard
+2. Go to your project > Settings > General
+3. Find "Root Directory" field
+4. Change it to: `web/`
+5. Click "Save"
+6. Redeploy or push a new commit
+
+**Why**: The repository root doesn't contain Next.js. The Next.js app is in the `web/` subdirectory.
+
+**Other build failures**:
 - Review build logs in Vercel dashboard
 - Verify environment variables are set correctly (NEXT_PUBLIC_API_URL)
 - Check Node.js version is compatible (20.x recommended)
 - Ensure all dependencies are in `package.json`
 - Frontend CI should pass: `.github/workflows/frontend.yml`
+- Verify `vercel.json` exists in `web/` directory
 
 **Production deployment not updating**:
 - Verify changes were merged to `main` branch

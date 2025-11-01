@@ -29,9 +29,14 @@ If not already installed:
 
 In the Vercel dashboard for your project:
 
+**CRITICAL: Root Directory Configuration**:
+- **Root Directory**: Must be set to `web/` (this is the most common configuration issue)
+- Go to Project Settings > General > Root Directory
+- Enter: `web/`
+- Click "Save"
+
 **Basic Configuration**:
 - **Framework Preset**: Next.js (should auto-detect)
-- **Root Directory**: `web/`
 - **Build Command**: `npm run build` (auto-detected)
 - **Output Directory**: `.next` (auto-detected)
 - **Install Command**: `npm install` (auto-detected)
@@ -119,7 +124,20 @@ Navigate to: Project Settings > Environment Variables
 
 ### Build Failures
 
-**Common Causes**:
+**Error: "No Next.js version detected"**:
+
+This is the most common error and means the Root Directory is not configured correctly.
+
+**Solution**:
+1. Go to Vercel Dashboard > Your Project > Settings > General
+2. Find "Root Directory" setting
+3. Change from `.` or empty to `web/`
+4. Click "Save"
+5. Trigger a new deployment (push a commit or redeploy)
+
+**Why this happens**: The repository root doesn't contain `package.json` with Next.js. The Next.js app is in the `web/` subdirectory.
+
+**Other Common Causes**:
 1. **Missing dependencies**: Check `package.json` and `package-lock.json`
 2. **Environment variables**: Verify `NEXT_PUBLIC_API_URL` is set
 3. **Node version**: Ensure 20.x is specified
@@ -130,6 +148,7 @@ Navigate to: Project Settings > Environment Variables
 2. Check Frontend CI passes: `.github/workflows/frontend.yml`
 3. Review Vercel build logs for specific errors
 4. Verify environment variables are set correctly
+5. Confirm `vercel.json` exists in `web/` directory with correct configuration
 
 ### PR Comments Not Appearing
 

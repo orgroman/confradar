@@ -12,10 +12,15 @@ This checklist guides you through configuring Vercel's native GitHub integration
 
 ## 2. Vercel Project Configuration
 
-### Basic Settings
+### Basic Settings - CRITICAL: Root Directory
 - [ ] Verify Vercel project exists for confradar frontend
-- [ ] Confirm framework preset is set to **Next.js** (should auto-detect)
-- [ ] Set root directory to `web/`
+- [ ] Go to Vercel Dashboard > Project > Settings > General
+- [ ] **CRITICAL**: Find "Root Directory" setting and set to `web/`
+  - This is THE most common issue - if not set, deployments will fail
+  - The error will be: "No Next.js version detected"
+  - Must be exactly: `web/` (with trailing slash)
+- [ ] Click "Save" after setting root directory
+- [ ] Confirm framework preset is set to **Next.js** (should auto-detect after root dir is set)
 - [ ] Verify build command: `npm run build` (auto-detected)
 - [ ] Verify output directory: `.next` (auto-detected)
 - [ ] Verify install command: `npm install` (auto-detected)
@@ -94,11 +99,22 @@ If using a custom domain:
 
 If deployments aren't working:
 
+### Error: "No Next.js version detected"
+
+This is the #1 deployment error. Fix it immediately:
+
+- [ ] Open Vercel Dashboard > Project > Settings > General
+- [ ] Find "Root Directory" field
+- [ ] Verify it's set to `web/` (not empty, not `.`)
+- [ ] Click "Save" if you changed it
+- [ ] Push a new commit or click "Redeploy" in Vercel dashboard
+- [ ] Check build logs to confirm error is resolved
+
 ### Check Vercel Integration
 - [ ] Vercel GitHub App is installed
 - [ ] App has access to repository
 - [ ] Project is linked to correct repository
-- [ ] Root directory is set to `web/`
+- [ ] Root directory is set to `web/` (see above)
 
 ### Check Build Configuration
 - [ ] Frontend builds locally: `cd web && npm install && npm run build`
