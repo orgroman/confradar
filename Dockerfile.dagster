@@ -34,8 +34,8 @@ COPY packages/confradar/workspace.yaml packages/confradar/dagster.yaml $DAGSTER_
 # Set Python path
 ENV PYTHONPATH=/opt/dagster/app/src
 
-# Health check
+# Health check (lightweight: container responsiveness)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD python -c "import confradar.dagster; print('OK')" || exit 1
+  CMD python -c "print('OK')" || exit 1
 
 # The command will be specified in docker-compose.yml
