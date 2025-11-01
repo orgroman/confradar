@@ -166,7 +166,7 @@ This is the most common deployment error. It means Vercel can't find the Next.js
 - Check Node.js version is compatible (20.x recommended)
 - Ensure all dependencies are in `package.json`
 - Frontend CI should pass: `.github/workflows/frontend.yml`
-- Verify `vercel.json` exists in `web/` directory
+- Verify `vercel.json` exists in repository root with correct path configuration
 
 **Production deployment not updating**:
 - Verify changes were merged to `main` branch

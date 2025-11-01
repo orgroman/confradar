@@ -148,7 +148,7 @@ This is the most common error and means the Root Directory is not configured cor
 2. Check Frontend CI passes: `.github/workflows/frontend.yml`
 3. Review Vercel build logs for specific errors
 4. Verify environment variables are set correctly
-5. Confirm `vercel.json` exists in `web/` directory with correct configuration
+5. Confirm `vercel.json` exists in repository root with correct path configuration
 
 ### PR Comments Not Appearing
 
