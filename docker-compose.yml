@@ -23,12 +23,13 @@ services:
     ports:
       - "5050:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@confradar.local}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
     restart: unless-stopped
     depends_on:
       postgres:
@@ -44,7 +45,7 @@ services:
       OPENAI_API_KEY: ${CONFRADAR_SA_OPENAI:-${OPENAI_API_KEY:-}}
       # Optional logging level: debug|info|warning|error
       LITELLM_LOG: info
-    command: ["uvicorn", "litellm.proxy:app", "--host", "0.0.0.0", "--port", "4000"]
+    command: ["--host", "0.0.0.0", "--port", "4000"]
     restart: unless-stopped
 
   dagster-daemon:
