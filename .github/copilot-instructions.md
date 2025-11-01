@@ -1,6 +1,5 @@
-# Instructions for Confradar
-
-Default project rules and conventions for this repository.
+---
+applyTo: "**"
 ---
 
 ## Documentation and Wiki

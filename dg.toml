@@ -1,0 +1,9 @@
+directory_type = "workspace"
+
+[workspace]
+
+[[workspace.projects]]
+path = "packages/confradar"
+
+[cli]
+# Keep default application-level settings

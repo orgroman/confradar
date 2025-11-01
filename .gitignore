@@ -37,9 +37,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-# Python lib/ (but not frontend web/lib/)
-/lib/
-/packages/*/lib/
+lib/
 lib64/
 parts/
 sdist/

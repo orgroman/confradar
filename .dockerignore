@@ -1,0 +1,48 @@
+# Python virtual environments
+**/.venv
+**/.venv/
+**/venv
+**/venv/
+**/__pycache__
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# Docs
+docs/_build/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+
+# Node modules (for web/)
+node_modules/
+.next/
+
+# UV cache
+.uv/

@@ -28,9 +28,20 @@ dependencies = [
   "psycopg[binary]>=3.1",
   "scrapy>=2.11",
   "playwright>=1.40",
-  "dagster>=1.8",
-  "dagster-webserver>=1.8",
+  "dagster>=1.12",
+  "dagster-webserver>=1.12",
 ]
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+# Root python module for the project
+root_module = "confradar"
+# Module containing the top-level Definitions object to load as a code location
+code_location_target_module = "confradar.dagster.definitions"
+# Optional: where defs/components are scaffolded (defaults to `<root_module>.defs`)
+defs_module = "confradar.dagster"
 
 [project.optional-dependencies]
 dev = [
@@ -41,6 +52,7 @@ dev = [
   "pytest-cov>=5.0",
   "pre-commit>=3.7",
   "alembic>=1.13",
+  "dagster-dg"
 ]
 
 [project.scripts]
