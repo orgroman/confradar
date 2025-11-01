@@ -144,6 +144,30 @@ $env:OPENAI_BASE_URL = "https://api.openai.com/v1"
 - **PostgreSQL**: localhost:5432 (username: confradar, password: confradar)
 - **pgAdmin**: http://localhost:5050 (email: admin@confradar.local, password: admin)
 
+## Production Deployment
+
+### Frontend Container Image
+
+The Next.js frontend is automatically built and published to GitHub Container Registry (GHCR) on every push to `main`:
+
+```bash
+# Pull latest production image
+docker pull ghcr.io/orgroman/confradar/web:latest
+
+# Run production container
+docker run -d -p 3100:3100 ghcr.io/orgroman/confradar/web:latest
+```
+
+See [Container Registry Documentation](docs/CONTAINER_REGISTRY.md) for:
+- Available image tags (`:latest`, `:sha-<commit>`)
+- Kubernetes deployment examples
+- Authentication and troubleshooting
+
+See [Production Frontend Setup](docs/PRODUCTION_FRONTEND.md) for:
+- Building with `docker-compose --profile production`
+- Multi-stage build details
+- Health check configuration
+
 ## Contributing
 
 Please file issues on the Project Board and use the label taxonomy (type:*, area:*, priority:Px).
