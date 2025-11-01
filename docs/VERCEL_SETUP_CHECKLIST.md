@@ -1,67 +1,141 @@
-# Vercel Deployment - Manual Configuration Checklist
+# Vercel Native Integration - Setup Checklist
 
-This checklist tracks the manual configuration steps required to complete the Vercel deployment setup.
+This checklist guides you through configuring Vercel's native GitHub integration for automated deployments.
 
-## 1. Vercel Project Setup
+## 1. Vercel GitHub App Installation
+
+- [ ] Visit https://vercel.com/new
+- [ ] Click "Import Git Repository"
+- [ ] Authorize Vercel to access GitHub account
+- [ ] Select `orgroman/confradar` repository
+- [ ] Complete Vercel GitHub App installation
+
+## 2. Vercel Project Configuration
+
+### Basic Settings
 - [ ] Verify Vercel project exists for confradar frontend
-- [ ] Confirm project is linked to GitHub repository
-- [ ] Verify framework preset is set to Next.js
-- [ ] Confirm root directory is set to `web/`
-- [ ] Verify build settings (build command, output directory) are correct
-- [ ] Ensure Node.js version is set to 20.x
+- [ ] Confirm framework preset is set to **Next.js** (should auto-detect)
+- [ ] Set root directory to `web/`
+- [ ] Verify build command: `npm run build` (auto-detected)
+- [ ] Verify output directory: `.next` (auto-detected)
+- [ ] Verify install command: `npm install` (auto-detected)
+- [ ] Set Node.js version to **20.x**
 
-## 2. Configure Azure Service Principal for GitHub Actions
+### Git Integration Settings
+- [ ] Set production branch to `main`
+- [ ] Enable automatic deployments
+- [ ] Enable deploy previews for all branches/PRs
+- [ ] Verify repository is correctly linked
 
-The workflow uses Azure Key Vault integration with OIDC authentication.
+## 3. Environment Variables Configuration
 
-### Setup Azure OIDC
-- [ ] Create or identify Azure Service Principal for GitHub Actions
-- [ ] Configure federated credentials for GitHub repository
-  - Entity type: Branch
-  - GitHub repository: orgroman/confradar
-  - Branch: main (and other branches as needed)
-- [ ] Grant Service Principal access to Key Vault (`kvconfradar`)
-  - Permission: Get and List secrets
-  - Access policy or RBAC role: Key Vault Secrets User
-
-### Add Azure Secrets to GitHub
-Go to: https://github.com/orgroman/confradar/settings/secrets/actions
-
-Add three repository secrets for Azure authentication:
-- [ ] `AZURE_CLIENT_ID` - Azure Service Principal Client ID
-- [ ] `AZURE_TENANT_ID` - Azure Tenant ID
-- [ ] `AZURE_SUBSCRIPTION_ID` - Value: `8592e500-3312-4991-9d2a-2b97e43b1810`
-
-## 3. Verify Vercel Secrets in Azure Key Vault
-
-Ensure these secrets exist in Azure Key Vault (`kvconfradar`) with exact names:
-- [ ] `VERCEL-TOKEN` - Vercel API authentication token
-- [ ] `VERCEL-ORG-ID` - Vercel organization or team ID
-- [ ] `VERCEL-PROJECT-ID` - Vercel project ID for confradar frontend
-
-**Note**: If secrets don't exist in Key Vault yet:
-1. Create Vercel API token: https://vercel.com/account/tokens
-2. Get Org ID from Vercel team settings or run `vercel link` in `web/` directory
-3. Get Project ID from Vercel project settings or `.vercel/project.json` after linking
-4. Add all three to Azure Key Vault with the exact names above
-
-**Important**: The workflow retrieves these automatically from Key Vault. You do NOT need to add them to GitHub Secrets.
-
-## 4. Configure Vercel Environment Variables
-
-In Vercel project settings (https://vercel.com/[your-org]/confradar/settings/environment-variables):
+In Vercel project settings > Environment Variables:
 
 ### Preview Environment
 - [ ] Add `NEXT_PUBLIC_API_URL` for preview/staging backend
-  - Recommended value: `https://api-preview.confradar.dev` (or your staging API URL)
-  - Or use localhost for testing: `http://localhost:8000`
+  - Suggested value: `https://api-preview.confradar.dev`
+  - Or for testing: `http://localhost:8000`
+  - Select environment: **Preview**
 
 ### Production Environment
 - [ ] Add `NEXT_PUBLIC_API_URL` for production backend
   - Set to production API URL when available
   - Example: `https://api.confradar.dev`
+  - Select environment: **Production**
 
-## 5. Verification & Testing
+**Note**: Only `NEXT_PUBLIC_*` variables are exposed to browser. Keep secrets server-side.
+
+## 4. GitHub Integration Verification
+
+- [ ] Check GitHub repository > Settings > Integrations
+- [ ] Verify Vercel app is installed and active
+- [ ] Ensure Vercel has permission to access repository
+- [ ] Verify Vercel can post comments on PRs (Read & write access)
+
+## 5. Test Deployments
+
+### Preview Deployment Test
+- [ ] Create test branch: `git checkout -b test-vercel-deployment`
+- [ ] Make small change in `web/` directory
+- [ ] Commit and push: `git push origin test-vercel-deployment`
+- [ ] Open pull request to `main`
+- [ ] Verify Vercel check appears on PR
+- [ ] Wait for deployment to complete
+- [ ] Check for Vercel comment with preview URL on PR
+- [ ] Visit preview URL and verify frontend loads correctly
+- [ ] Test functionality on preview deployment
+
+### Production Deployment Test
+- [ ] Merge a PR to main branch (or push directly if needed)
+- [ ] Check Vercel dashboard for deployment
+- [ ] Verify production deployment succeeds
+- [ ] Visit production URL and verify frontend loads
+- [ ] Test frontend functionality on production
+
+## 6. Monitor and Verify
+
+- [ ] Check Vercel dashboard shows deployments: https://vercel.com/
+- [ ] Verify PR comments appear with deployment URLs
+- [ ] Check deployment status and logs
+- [ ] Confirm frontend CI passes: `.github/workflows/frontend.yml`
+- [ ] Verify no deployment workflow conflicts
+
+## 7. Optional: Custom Domain Setup
+
+If using a custom domain:
+- [ ] Go to Vercel project settings > Domains
+- [ ] Add custom domain
+- [ ] Configure DNS records as instructed by Vercel
+- [ ] Wait for SSL certificate provisioning
+- [ ] Verify custom domain works
+- [ ] Update documentation with custom domain URL
+
+## Troubleshooting Checklist
+
+If deployments aren't working:
+
+### Check Vercel Integration
+- [ ] Vercel GitHub App is installed
+- [ ] App has access to repository
+- [ ] Project is linked to correct repository
+- [ ] Root directory is set to `web/`
+
+### Check Build Configuration
+- [ ] Frontend builds locally: `cd web && npm install && npm run build`
+- [ ] Frontend CI passes on GitHub
+- [ ] Environment variables are set in Vercel
+- [ ] Node.js version is compatible (20.x)
+
+### Check Permissions
+- [ ] Vercel can post PR comments
+- [ ] Automatic deployments are enabled
+- [ ] No conflicting GitHub Actions workflows
+
+### Review Logs
+- [ ] Check Vercel dashboard deployment logs
+- [ ] Review build errors in Vercel console
+- [ ] Check GitHub Actions if any workflows are running
+- [ ] Verify no errors in PR checks
+
+## Documentation Updates
+
+After successful setup:
+- [ ] Update `wiki/Deployment.md` with any project-specific notes
+- [ ] Document production URL in README if applicable
+- [ ] Note any custom configuration in team wiki
+- [ ] Update this checklist with lessons learned
+
+## Success Criteria
+
+✅ Preview deployments work automatically on PRs
+✅ Preview URLs posted as PR comments
+✅ Production deployments work on main branch merges
+✅ Vercel integration is stable and reliable
+✅ Team understands how to monitor and troubleshoot deployments
+
+---
+
+**Note**: This approach uses Vercel's native GitHub integration, which is simpler and more reliable than custom GitHub Actions workflows. No manual secret management or workflow configuration is needed.
 
 ### Preview Deployment Test
 - [ ] Create test branch with change to `web/` directory

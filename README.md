@@ -1,7 +1,6 @@
 # ConfRadar
 
 [![Frontend CI](https://github.com/orgroman/confradar/actions/workflows/frontend.yml/badge.svg)](https://github.com/orgroman/confradar/actions/workflows/frontend.yml)
-[![Deploy to Vercel](https://github.com/orgroman/confradar/actions/workflows/deploy-vercel.yml/badge.svg)](https://github.com/orgroman/confradar/actions/workflows/deploy-vercel.yml)
 
 AI-powered agent that tracks academic conference deadlines by crawling CFP pages, extracting key dates with LLMs, detecting changes, and publishing to collaborative surfaces (Notion/Google Docs). Built in Python with LangChain; supports alias resolution, clustering of workshops, change history, and calendar export.
 
