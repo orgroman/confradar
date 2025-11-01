@@ -2,21 +2,75 @@
 
 Run with: uv run pytest -m integration
 Skip with: uv run pytest -m "not integration"
+
+Note: Uses subprocess approach to avoid Scrapy reactor restartability issues.
 """
 
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
 
 import pytest
-from scrapy.crawler import CrawlerProcess
-from scrapy.utils.project import get_project_settings
 
 from confradar.scrapers.spiders.acl_web import ACLWebSpider
 from confradar.scrapers.spiders.ai_deadlines import AIDeadlinesSpider
 from confradar.scrapers.spiders.chairing_tool import ChairingToolSpider
 from confradar.scrapers.spiders.elra import ELRASpider
 from confradar.scrapers.spiders.wikicfp import WikiCFPSpider
+
+
+def run_spider_in_subprocess(spider_cls, output_file: Path) -> int:
+    """Run a spider in a subprocess to avoid reactor issues.
+
+    Args:
+        spider_cls: Spider class to run
+        output_file: Path to JSON output file
+
+    Returns:
+        Return code from subprocess
+    """
+    # Create a simple script that runs the spider
+    script = f"""
+import json
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
+
+# Import the spider class
+spider_cls = {spider_cls.__module__}.{spider_cls.__name__}
+
+# Configure settings
+settings = get_project_settings()
+settings.set("HTTPCACHE_ENABLED", False)
+settings.set("FEEDS", {{
+    "{output_file.as_posix()}": {{"format": "json", "overwrite": True}}
+}})
+settings.set("ITEM_PIPELINES", {{
+    "confradar.scrapers.pipelines.ValidationPipeline": 100,
+}})
+settings.set("LOG_LEVEL", "WARNING")  # Reduce noise in tests
+
+# Run spider
+process = CrawlerProcess(settings)
+process.crawl(spider_cls)
+process.start()
+"""
+
+    # Run in subprocess
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=30,  # 30 second timeout per spider
+    )
+
+    if result.returncode != 0:
+        print(f"Spider failed: {result.stderr}")
+
+    return result.returncode
 
 
 def run_spider_and_collect(spider_cls) -> list[dict]:
@@ -28,36 +82,30 @@ def run_spider_and_collect(spider_cls) -> list[dict]:
     Returns:
         List of scraped items as dictionaries
     """
-    collected_items = []
+    # Create temporary file for output
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False
+    ) as tmp_file:
+        output_file = Path(tmp_file.name)
 
-    def collect_item(item, response, spider):
-        """Signal handler to collect items."""
-        collected_items.append(dict(item))
+    try:
+        # Run spider in subprocess
+        returncode = run_spider_in_subprocess(spider_cls, output_file)
 
-    # Get Scrapy settings
-    settings = get_project_settings()
-    settings.set("HTTPCACHE_ENABLED", False)  # Disable cache for integration tests
-    settings.set(
-        "ITEM_PIPELINES",
-        {
-            "confradar.scrapers.pipelines.ValidationPipeline": 100,
-        },
-    )
+        if returncode != 0:
+            return []
 
-    # Create crawler process
-    process = CrawlerProcess(settings)
+        # Read results
+        if output_file.exists() and output_file.stat().st_size > 0:
+            with open(output_file) as f:
+                items = json.load(f)
+            return items if isinstance(items, list) else []
+        return []
 
-    # Connect signal to collect items
-    from scrapy import signals
-    from scrapy.signalmanager import dispatcher
-
-    dispatcher.connect(collect_item, signal=signals.item_scraped)
-
-    # Run spider
-    process.crawl(spider_cls)
-    process.start()
-
-    return collected_items
+    finally:
+        # Clean up temp file
+        if output_file.exists():
+            output_file.unlink()
 
 
 @pytest.mark.integration
@@ -202,13 +250,10 @@ def test_ai_deadlines_spider_output_json(tmp_path):
     """Test spider can output to JSON file."""
     output_file = tmp_path / "conferences.json"
 
-    settings = get_project_settings()
-    settings.set("FEEDS", {str(output_file): {"format": "json", "overwrite": True}})
-    settings.set("HTTPCACHE_ENABLED", False)
+    # Run spider in subprocess with output to file
+    returncode = run_spider_in_subprocess(AIDeadlinesSpider, output_file)
 
-    process = CrawlerProcess(settings)
-    process.crawl(AIDeadlinesSpider)
-    process.start()
+    assert returncode == 0, "Spider should complete successfully"
 
     # Verify file was created and has content
     assert output_file.exists()

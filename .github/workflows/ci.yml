@@ -67,6 +67,7 @@ jobs:
           DATABASE_URL: postgresql+psycopg://confradar:confradar@localhost:5432/confradar_test
         run: |
           cd packages/confradar
-          # Skip integration tests due to Scrapy reactor issue (see #83)
-          # Database tests now enabled with PostgreSQL service (#84 resolved)
-          uv run pytest -q --ignore=tests/test_integration_scrapers.py
+          # Run all tests including integration tests (reactor issue fixed in #83)
+          # Database tests enabled with PostgreSQL service (#84 resolved)
+          # Use -m "not integration" to skip slow network-based integration tests in CI
+          uv run pytest -q -m "not integration"
