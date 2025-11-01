@@ -15,10 +15,10 @@ Default project rules and conventions for this repository.
 - When identifying follow-ups, improvements, or missing work:
   - Create a GitHub issue, or update an existing one.  
   - Assign a priority label:  
-    - `P0` – urgent / blocking  
-    - `P1` – important  
-    - `P2` – nice-to-have / later  
-    - `P3` – low priority / backlog  
+    - `priority:P0` – urgent / blocking  
+    - `priority:P1` – important  
+    - `priority:P2` – nice-to-have / later  
+    - `priority:P3` – low priority / backlog  
 - Link related issues in pull requests.
 
 ## Pull Requests and Branch Policy

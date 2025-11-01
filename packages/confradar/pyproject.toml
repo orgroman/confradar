@@ -30,6 +30,7 @@ dependencies = [
   "playwright>=1.40",
   "dagster>=1.12",
   "dagster-webserver>=1.12",
+  "dagster-postgres>=0.24",
 ]
 
 [tool.dg]
