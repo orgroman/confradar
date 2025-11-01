@@ -20,6 +20,10 @@ from confradar.dagster.assets.scrapers import (
     wikicfp_conferences,
 )
 from confradar.dagster.assets.storage import store_conferences
+from confradar.dagster.sensors import (
+    asset_check_failure_alert,
+    pipeline_failure_alert,
+)
 
 # Define jobs
 crawl_job = define_asset_job(
@@ -54,4 +58,8 @@ defs = Definitions(
     ],
     jobs=[crawl_job],
     schedules=[daily_crawl_schedule],
+    sensors=[
+        pipeline_failure_alert,
+        asset_check_failure_alert,
+    ],
 )

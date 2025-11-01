@@ -21,6 +21,9 @@ def test_dagster_definitions_load():
     # Check that we have schedules defined
     assert hasattr(defs, "schedules")
     assert len(defs.schedules) > 0
+    # Check that we have sensors defined
+    assert hasattr(defs, "sensors")
+    assert len(defs.sensors) == 2  # 2 failure alert sensors
 
 
 def test_asset_names():
