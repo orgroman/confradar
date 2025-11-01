@@ -2,6 +2,10 @@
 applyTo: "**"
 ---
 
+# Instructions for Confradar
+
+Default project rules and conventions for this repository.
+
 ## Documentation and Wiki
 - The wiki is the source of truth.  
 - Always read the wiki before suggesting or changing architecture, ingestion flows, or pipeline logic.  
