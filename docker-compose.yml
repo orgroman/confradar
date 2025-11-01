@@ -116,6 +116,29 @@ services:
     command: ["sh", "-lc", "if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then (npm ci || npm install); fi; npm run dev -- -p 3100 -H 0.0.0.0"]
     restart: unless-stopped
 
+  web-prod:
+    profiles: ["production"]
+    build:
+      context: ./web
+      dockerfile: Dockerfile.prod
+      args:
+        - NODE_ENV=production
+    container_name: confradar-web-prod
+    ports:
+      - "3101:3100"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Optional: API base URL if needed
+      # NEXT_PUBLIC_API_URL: http://localhost:8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3100/api/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
 volumes:
   postgres_data:
   pgadmin_data:
