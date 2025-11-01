@@ -205,6 +205,114 @@ This is the most common deployment error. It means Vercel can't find the Next.js
 
 Backend deployment documentation to be added when backend hosting is configured.
 
+## Secrets Management
+
+ConfRadar uses **Azure Key Vault** for centralized secrets management in both local development and CI/CD pipelines.
+
+### Azure Key Vault Setup
+
+**Key Vault Name**: `kvconfradar`  
+**Azure Subscription ID**: `8592e500-3312-4991-9d2a-2b97e43b1810`
+
+All sensitive credentials (API keys, connection strings, service account tokens) are stored in Azure Key Vault and retrieved at runtime or during CI/CD execution.
+
+### GitHub Actions Integration
+
+GitHub Actions can securely access Azure Key Vault secrets using **federated identity (OIDC)** without storing long-lived secrets.
+
+**Official Documentation**: [Use GitHub Actions to connect to Azure Key Vault](https://learn.microsoft.com/en-us/azure/developer/github/github-actions-key-vault)
+
+#### How It Works
+
+1. **Federated Identity**: GitHub's OIDC provider issues tokens that Azure trusts, eliminating the need for secrets or passwords.
+2. **Azure Login**: GitHub Actions workflows authenticate to Azure using `azure/login@v1` with federated credentials.
+3. **Retrieve Secrets**: Use `azure/get-keyvault-secrets@v1` or Azure CLI to fetch secrets from Key Vault.
+4. **Inject into Workflow**: Retrieved secrets are available as environment variables for subsequent steps.
+
+#### Required GitHub Secrets
+
+The following **GitHub repository secrets** must be configured for Azure Key Vault integration:
+
+- `AZURE_CLIENT_ID` - Service principal / managed identity client ID
+- `AZURE_TENANT_ID` - Azure Active Directory tenant ID  
+- `AZURE_SUBSCRIPTION_ID` - Azure subscription ID (already documented: `8592e500-3312-4991-9d2a-2b97e43b1810`)
+
+**Note**: These secrets are already configured in the `orgroman/confradar` repository.
+
+#### Example Workflow
+
+```yaml
+name: Deploy with Secrets from Azure Key Vault
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write  # Required for OIDC token
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get secrets from Key Vault
+        uses: azure/get-keyvault-secrets@v1
+        with:
+          keyvault: "kvconfradar"
+          secrets: 'OPENAI-API-KEY, VERCEL-TOKEN'
+        id: keyvault
+
+      - name: Use secrets in deployment
+        env:
+          OPENAI_API_KEY: ${{ steps.keyvault.outputs.OPENAI-API-KEY }}
+          VERCEL_TOKEN: ${{ steps.keyvault.outputs.VERCEL-TOKEN }}
+        run: |
+          echo "Deploying with secrets from Key Vault..."
+          # Your deployment commands here
+```
+
+### Best Practices
+
+1. **Single Source of Truth**: Store all secrets in Azure Key Vault; avoid duplicating in GitHub Secrets unless required for OIDC authentication.
+2. **Use Federated Identity**: Prefer OIDC-based authentication over service principal secrets for GitHub Actions.
+3. **Principle of Least Privilege**: Grant Key Vault access policies only to identities that need them (GitHub Actions service principal, developers).
+4. **Audit Access**: Enable Azure Key Vault logging and monitor secret access patterns.
+5. **Rotate Secrets Regularly**: Update secrets in Key Vault; workflows will automatically use the latest values.
+6. **Never Commit Secrets**: Secrets must never be committed to the repository, even in examples or documentation.
+
+### Local Development
+
+For local development, authenticate to Azure and retrieve secrets manually or via Azure CLI:
+
+```powershell
+# Login to Azure
+az login
+
+# Retrieve a secret
+az keyvault secret show --vault-name kvconfradar --name OPENAI-API-KEY --query value -o tsv
+
+# Set as environment variable
+$env:OPENAI_API_KEY = $(az keyvault secret show --vault-name kvconfradar --name OPENAI-API-KEY --query value -o tsv)
+```
+
+Alternatively, use **Azure MCP** to access Key Vault secrets interactively during development sessions.
+
+### Related Documentation
+
+- [Development Guide](Development-Guide) - Local development setup and secret management
+- [Microsoft Learn: GitHub Actions + Azure Key Vault](https://learn.microsoft.com/en-us/azure/developer/github/github-actions-key-vault)
+- [Azure Key Vault Documentation](https://learn.microsoft.com/en-us/azure/key-vault/)
+
 ## Related
 
 - [Architecture](Architecture) - System architecture overview
