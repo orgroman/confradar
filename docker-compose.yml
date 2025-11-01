@@ -45,7 +45,7 @@ services:
       OPENAI_API_KEY: ${CONFRADAR_SA_OPENAI:-${OPENAI_API_KEY:-}}
       # Optional logging level: debug|info|warning|error
       LITELLM_LOG: info
-    command: ["litellm", "--host", "0.0.0.0", "--port", "4000"]
+    command: ["--host", "0.0.0.0", "--port", "4000"]
     restart: unless-stopped
 
   dagster-daemon:
