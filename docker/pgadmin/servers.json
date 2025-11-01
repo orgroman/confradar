@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "Confradar Postgres": {
+      "Name": "Confradar Postgres",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "confradar",
+      "SSLMode": "prefer",
+      "ConnectNow": true
+    }
+  }
+}
