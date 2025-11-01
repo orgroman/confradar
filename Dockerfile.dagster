@@ -16,10 +16,10 @@ ENV PATH="/root/.local/bin:$PATH"
 WORKDIR /opt/dagster/app
 
 # Copy project files
-COPY packages/confradar/pyproject.toml packages/confradar/uv.lock* ./
+COPY packages/confradar/pyproject.toml packages/confradar/uv.lock ./
 
 # Install Python dependencies
-RUN uv sync --no-dev
+RUN uv sync --no-dev --frozen
 
 # Copy application code
 COPY packages/confradar/ ./
