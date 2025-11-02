@@ -220,7 +220,7 @@ All core services in `docker-compose.yml` include healthchecks for improved reli
 | **postgres** | Shell command | `pg_isready -U confradar` | 5s | 5s | default | 5 |
 | **litellm** | HTTP GET | `http://localhost:4000/health` | 15s | 5s | 10s | 5 |
 | **dagster-daemon** | CLI command | `uv run dagster-daemon liveness-check` | 20s | 8s | 30s | 5 |
-| **dagster-webserver** | HTTP GET | `http://localhost:3000/server_info` | 10s | 5s | 20s | 5 |
+| **dagster-webserver** | HTTP GET | `http://localhost:3000/server_info` | 15s | 5s | 15s | 5 |
 | **web** (dev) | HTTP GET | `http://localhost:3100/` (200 or 304) | 15s | 10s | 60s | 5 |
 | **web-prod** | HTTP GET | `http://localhost:3100/api/health` | 30s | 3s | 10s | 3 |
 
@@ -236,9 +236,9 @@ All core services in `docker-compose.yml` include healthchecks for improved reli
 Services use `depends_on` with `condition: service_healthy` to enforce startup order:
 
 1. **postgres** starts first (no dependencies)
-2. **litellm** waits for postgres to be healthy
-3. **dagster-daemon** waits for postgres and liteLLM to be healthy
-4. **dagster-webserver** waits for postgres, liteLLM, and dagster-daemon to be healthy
+2. **LiteLLM** waits for postgres to be healthy
+3. **dagster-daemon** waits for postgres and LiteLLM to be healthy
+4. **dagster-webserver** waits for postgres, LiteLLM, and dagster-daemon to be healthy
 5. **web** service has no health dependencies (frontend can start independently)
 
 This ensures that:
