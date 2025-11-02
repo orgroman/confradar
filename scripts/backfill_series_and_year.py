@@ -63,15 +63,15 @@ def extract_year_from_key(key: str) -> Optional[int]:
         wmt2525 -> 2025 (handles duplicated digits)
         202525 -> 2025
     """
-    # Find all 4-digit year matches
-    four_digit_years = re.findall(r'20(\d{2})', key)
+    # Find all 4-digit year matches (capture the full 4-digit year)
+    four_digit_years = re.findall(r'(20\d{2})', key)
     if four_digit_years:
         # Prefer the last 4-digit year found.
         # Rationale: In conference keys with multiple year mentions (e.g., 'acl2024_workshop2025'),
         # the last year typically refers to the main conference year, while earlier years may refer
         # to workshops or related events. This approach aims to extract the most relevant year for
         # the main conference. If key formats change, this logic may need to be revisited.
-        return int(f"20{four_digit_years[-1]}")
+        return int(four_digit_years[-1])
     
     # Check for 2-digit year at the end, possibly duplicated (e.g., "2525")
     match = re.search(r'(\d{2})$', key)
@@ -100,8 +100,9 @@ def extract_series_acronym_from_key(key: str) -> Optional[str]:
         wmt2525 -> wmt
     """
     # Remove year suffix: either a 4-digit year (20xx) or duplicated 2-digit year (e.g., 2525) at the end
-    # This consolidated pattern avoids accidental removal of extra trailing digits preceding the year.
-    clean_key = re.sub(r'(20\d{2}|(\d{2})\2)$', '', key)
+    # Use a non-capturing group for the 4-digit branch and a backreference for the duplicated 2-digit case.
+    # This avoids undefined backreferences when the first alternative matches.
+    clean_key = re.sub(r'(?:20\d{2}|(\d{2})\1)$', '', key)
     
     if clean_key:
         return clean_key.lower()
@@ -185,7 +186,8 @@ def backfill_conferences(session: Session, series_map: dict[str, int], dry_run: 
                 series_updated += 1
                 updated = True
         else:
-            # Explicitly store None to indicate we won't need a derived value for coverage
+            # Conference already has a series_id; coverage counts it directly above,
+            # so we don't need to derive or cache an acronym here.
             acronym_cache[conf.key] = None
         
         if updated:
