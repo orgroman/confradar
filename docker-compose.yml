@@ -46,6 +46,13 @@ services:
       # Optional logging level: debug|info|warning|error
       LITELLM_LOG: info
     command: ["--host", "0.0.0.0", "--port", "4000"]
+    healthcheck:
+      # Use LiteLLM official health endpoint
+      test: ["CMD", "python", "-c", "import urllib.request,sys; r=urllib.request.urlopen('http://localhost:4000/health', timeout=3); sys.exit(0) if r.status==200 else sys.exit(1)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
     restart: unless-stopped
 
   dagster-daemon:
@@ -71,7 +78,7 @@ services:
       postgres:
         condition: service_healthy
       litellm:
-        condition: service_started
+        condition: service_healthy
 
   dagster-webserver:
     build:
@@ -106,7 +113,7 @@ services:
       dagster-daemon:
         condition: service_started
       litellm:
-        condition: service_started
+        condition: service_healthy
 
   web:
     build:
