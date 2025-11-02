@@ -486,6 +486,16 @@ Changes:
 
 Rationale: Align database with PRD and near-term schema plan to support series-level grouping and richer event metadata (year, venue, and event dates).
 
+## Schema Update (v3)
+
+Date: 2025-11-02  
+Revision: c1a2b3c4d5e6
+
+Changes:
+- Added check constraint `ck_conference_event_date_order` on `conferences` table to ensure `event_end_date >= event_start_date` when both dates are not NULL.
+
+Rationale: Enforce data integrity for conference event dates, preventing invalid date ranges where the end date occurs before the start date.
+
 ## Data Backfill (v2)
 
 Date: 2025-11-02  
@@ -528,3 +538,43 @@ The script is idempotent and safe to re-run:
 - Only updates conferences where `series_id` or `year` is NULL
 - Seeds `conference_series` table only if series doesn't exist
 - Can be run after importing new conferences to backfill their metadata
+
+## Conference Series Seeding
+
+Date: 2025-11-02  
+Script: `scripts/seed_conference_series.py`
+
+### Purpose
+Seed the `conference_series` table with major academic conference series in machine learning, NLP, and related fields. This provides canonical names and homepages for well-known conferences.
+
+### Seeded Series
+The script seeds 8 major conference series:
+- **NeurIPS**: Conference on Neural Information Processing Systems
+- **ICML**: International Conference on Machine Learning
+- **ICLR**: International Conference on Learning Representations
+- **ACL**: Annual Meeting of the Association for Computational Linguistics
+- **EMNLP**: Conference on Empirical Methods in Natural Language Processing
+- **NAACL**: North American Chapter of the Association for Computational Linguistics
+- **COLING**: International Conference on Computational Linguistics
+- **EACL**: European Chapter of the Association for Computational Linguistics
+
+Each series includes:
+- `short_name`: Acronym (e.g., "NeurIPS", "ACL")
+- `name`: Full canonical name
+- `homepage`: Official website URL
+
+### Usage
+
+```bash
+# Dry run (preview changes)
+python scripts/seed_conference_series.py --dry-run
+
+# Apply changes
+python scripts/seed_conference_series.py
+```
+
+### Idempotency
+The script is idempotent and safe to run multiple times:
+- Checks if each series already exists before creating
+- Skips existing series and reports them
+- Only creates new series that don't yet exist in the database

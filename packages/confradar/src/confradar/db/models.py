@@ -52,6 +52,10 @@ class Conference(TimestampMixin, Base):
             "year IS NULL OR (year >= 2020 AND year <= 2035)",
             name="ck_conference_year",
         ),
+        CheckConstraint(
+            "event_start_date IS NULL OR event_end_date IS NULL OR event_end_date >= event_start_date",
+            name="ck_conference_event_date_order",
+        ),
     )
 
     series: Mapped[ConferenceSeries | None] = relationship(back_populates="conferences")
