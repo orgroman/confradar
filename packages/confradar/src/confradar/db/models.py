@@ -22,7 +22,7 @@ class ConferenceSeries(TimestampMixin, Base):
     )
 
     conferences: Mapped[list[Conference]] = relationship(
-        back_populates="series", cascade="all, delete-orphan"
+        back_populates="series"
     )
 
 

@@ -52,7 +52,7 @@ CREATE INDEX ix_conference_year ON conferences(year);
 CREATE INDEX ix_conference_series ON conferences(series_id);
 CREATE INDEX ix_conference_dates ON conferences(event_start_date, event_end_date);
 
--- Constraint: year should be reasonable (2020-2030 for now)
+-- Constraint: year should be reasonable (2020-2035 for now)
 ALTER TABLE conferences
     ADD CONSTRAINT ck_conference_year CHECK (year IS NULL OR (year >= 2020 AND year <= 2035));
 ```

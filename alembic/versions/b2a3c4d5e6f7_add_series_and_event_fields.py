@@ -11,8 +11,7 @@ Create Date: 2025-11-02 00:00:00.000000+00:00
 """
 from __future__ import annotations
 
-from alembic import op
-import sqlalchemy as sa
+from alembic import op  # noqa: F401 (imported for Alembic template consistency)
 
 
 # revision identifiers, used by Alembic.

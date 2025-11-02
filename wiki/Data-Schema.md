@@ -215,7 +215,7 @@ All tables use auto-increment integer primary keys for:
 ### Application-Level Validation (Future)
 
 *To be implemented:*
-- Year validation (e.g., 2020-2030 range)
+- Year validation (e.g., align with DB check 2020-2035 range)
 - Deadline ordering (submission < notification < camera_ready)
 - URL format validation
 - Timezone string validation
@@ -477,7 +477,7 @@ SELECT * FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 10;
 ## Schema Update (v2)
 
 Date: 2025-11-02  
-Revision: b752be5b88c0 (followed by empty linearization b2a3c4d5e6f7)
+Revision: b752be5b88c0 (followed by empty linearization migration b2a3c4d5e6f7 to resolve migration heads)
 
 Changes:
 - Introduced new table `conference_series` with columns: `id`, `name`, `short_name` (UNIQUE), `homepage`, `notes`, `created_at`, `updated_at`; index `ix_series_name`.
