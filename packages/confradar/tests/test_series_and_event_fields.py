@@ -14,7 +14,9 @@ def test_conference_series_and_event_fields(tmp_path):
     Base.metadata.create_all(engine)
 
     with Session(engine) as session:
-        series = ConferenceSeries(name="International Conference on Machine Learning", short_name="ICML")
+        series = ConferenceSeries(
+            name="International Conference on Machine Learning", short_name="ICML"
+        )
         session.add(series)
         session.flush()
 

@@ -32,7 +32,9 @@ class Conference(TimestampMixin, Base):
     series_id: Mapped[int | None] = mapped_column(
         ForeignKey("conference_series.id", ondelete="SET NULL")
     )
-    key: Mapped[str] = mapped_column(String(64), nullable=False)  # canonical key, e.g., neurips_2025
+    key: Mapped[str] = mapped_column(
+        String(64), nullable=False
+    )  # canonical key, e.g., neurips_2025
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     year: Mapped[int | None] = mapped_column()
     location: Mapped[str | None] = mapped_column(String(255))  # City, Country
