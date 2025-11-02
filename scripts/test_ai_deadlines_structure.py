@@ -1,7 +1,6 @@
 """Quick script to explore AI Deadlines HTML structure."""
 import httpx
 from bs4 import BeautifulSoup
-import json
 
 # Fetch the page
 url = "https://aideadlin.es/?sub=NLP"
