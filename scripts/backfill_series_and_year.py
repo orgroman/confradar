@@ -17,7 +17,8 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from confradar.db import Conference, ConferenceSeries, get_engine
+from confradar.db import Conference, ConferenceSeries
+from confradar.db.base import get_engine
 
 
 # Major conference series we want to track
@@ -153,7 +154,8 @@ def backfill_conferences(session: Session, series_map: dict[str, int], dry_run: 
     year_updated = 0
     series_updated = 0
     
-    # Cache extracted values to avoid redundant recomputation in coverage (especially for dry runs)
+    # Cache extracted values to avoid redundant recomputation when calculating coverage statistics
+    # (applies to both dry-run and actual runs)
     year_cache: dict[str, Optional[int]] = {}
     acronym_cache: dict[str, Optional[str]] = {}
     
@@ -190,8 +192,8 @@ def backfill_conferences(session: Session, series_map: dict[str, int], dry_run: 
                 updated = True
         else:
             # Conference already has a series_id; coverage counts it directly above,
-            # so we don't need to derive or cache an acronym here.
-            acronym_cache[conf.key] = None
+            # so we don't need to derive or cache an acronym here (skip cache entry).
+            pass
         
         if updated:
             updated_count += 1
