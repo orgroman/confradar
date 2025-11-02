@@ -101,12 +101,12 @@ def extract_series_acronym_from_key(key: str) -> Optional[str]:
         wmt2525 -> wmt
     """
     # Remove year suffix at the end of the key:
+    # - duplicated 2-digit year (e.g., 2525) - matched first to avoid ambiguity
     # - 4-digit year (20xx)
-    # - duplicated 2-digit year (e.g., 2525)
     # - simple 2-digit year in valid DB range (20-35), e.g., "emnlp25" -> "emnlp"
-    # Use a non-capturing group for the 4-digit branch and a backreference for the duplicated 2-digit case.
+    # Use a backreference for the duplicated 2-digit case, then non-capturing groups for the rest.
     # Note: the 2-digit range mirrors the DB constraint for years 2020-2035
-    clean_key = re.sub(r'(?:20\d{2}|(\d{2})\1|(?:2[0-9]|3[0-5]))$', '', key)
+    clean_key = re.sub(r'((\d{2})\2|20\d{2}|(?:2[0-9]|3[0-5]))$', '', key)
     
     if clean_key:
         return clean_key.lower()
@@ -190,10 +190,6 @@ def backfill_conferences(session: Session, series_map: dict[str, int], dry_run: 
                     print(f"✓ Set series_id={series_map[acronym]} ({acronym.upper()}) for {conf.key}")
                 series_updated += 1
                 updated = True
-        else:
-            # Conference already has a series_id; coverage counts it directly above,
-            # so we don't need to derive or cache an acronym here (skip cache entry).
-            pass
         
         if updated:
             updated_count += 1
