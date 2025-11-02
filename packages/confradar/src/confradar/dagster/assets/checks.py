@@ -43,9 +43,7 @@ def check_conference_count() -> AssetCheckResult:
         session.close()
 
 
-@asset_check(
-    asset="store_conferences", description="Validates required fields are present"
-)
+@asset_check(asset="store_conferences", description="Validates required fields are present")
 def check_required_fields() -> AssetCheckResult:
     """Check that all conferences have required fields (name, key).
 
@@ -82,9 +80,7 @@ def check_required_fields() -> AssetCheckResult:
         session.close()
 
 
-@asset_check(
-    asset="store_conferences", description="Validates deadline date formats"
-)
+@asset_check(asset="store_conferences", description="Validates deadline date formats")
 def check_deadline_dates() -> AssetCheckResult:
     """Check that all deadlines have valid date formats.
 
@@ -100,9 +96,7 @@ def check_deadline_dates() -> AssetCheckResult:
         total_deadlines = session.query(func.count(Deadline.id)).scalar()
 
         # Check for deadlines with null due_date (shouldn't happen due to schema)
-        invalid_deadlines = (
-            session.query(Deadline).filter(Deadline.due_date.is_(None)).count()
-        )
+        invalid_deadlines = session.query(Deadline).filter(Deadline.due_date.is_(None)).count()
 
         if invalid_deadlines > 0:
             return AssetCheckResult(
@@ -132,9 +126,7 @@ def check_deadline_dates() -> AssetCheckResult:
         session.close()
 
 
-@asset_check(
-    asset="store_conferences", description="Detects duplicate conference keys"
-)
+@asset_check(asset="store_conferences", description="Detects duplicate conference keys")
 def check_duplicate_conferences() -> AssetCheckResult:
     """Check for duplicate conference keys in the database.
 

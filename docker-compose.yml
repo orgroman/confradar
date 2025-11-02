@@ -55,7 +55,7 @@ services:
     container_name: dagster-daemon
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://confradar:confradar@postgres:5432/confradar}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://confradar:confradar@postgres:5432/confradar}
       CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
@@ -82,7 +82,7 @@ services:
       - "3000:3000"
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://confradar:confradar@postgres:5432/confradar}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://confradar:confradar@postgres:5432/confradar}
       CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:

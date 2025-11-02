@@ -1,7 +1,5 @@
 """Tests for Dagster sensors."""
 
-import pytest
-
 from confradar.dagster.sensors import (
     asset_check_failure_alert,
     pipeline_failure_alert,
