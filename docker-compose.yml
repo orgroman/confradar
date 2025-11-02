@@ -62,6 +62,9 @@ services:
       - ./packages/confradar:/opt/dagster/app
       - dagster_data:/opt/dagster/data
       - dagster_home:/opt/dagster/dagster_home
+      # Ensure Dagster finds instance and workspace configs even with a named volume
+      - ./packages/confradar/workspace.yaml:/opt/dagster/dagster_home/workspace.yaml:ro
+      - ./packages/confradar/dagster.yaml:/opt/dagster/dagster_home/dagster.yaml:ro
     command: ["uv", "run", "dagster-daemon", "run"]
     restart: unless-stopped
     depends_on:
@@ -86,6 +89,9 @@ services:
       - ./packages/confradar:/opt/dagster/app
       - dagster_data:/opt/dagster/data
       - dagster_home:/opt/dagster/dagster_home
+      # Ensure Dagster finds instance and workspace configs even with a named volume
+      - ./packages/confradar/workspace.yaml:/opt/dagster/dagster_home/workspace.yaml:ro
+      - ./packages/confradar/dagster.yaml:/opt/dagster/dagster_home/dagster.yaml:ro
     command: ["uv", "run", "dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
     restart: unless-stopped
     depends_on:
