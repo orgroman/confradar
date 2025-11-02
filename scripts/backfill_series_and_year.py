@@ -48,6 +48,11 @@ MAJOR_SERIES = [
     ("NLRSE", "Natural Language Reasoning and Structured Explanations Workshop"),
 ]
 
+# Year extraction boundaries must match the database CHECK constraint on Conference.year
+# Database allows years in range 2020..2035
+MIN_YEAR_SUFFIX = 20  # -> 2020
+MAX_YEAR_SUFFIX = 35  # -> 2035
+
 
 def extract_year_from_key(key: str) -> Optional[int]:
     """Extract conference year from key.
@@ -61,7 +66,11 @@ def extract_year_from_key(key: str) -> Optional[int]:
     # Find all 4-digit year matches
     four_digit_years = re.findall(r'20(\d{2})', key)
     if four_digit_years:
-        # Prefer the last 4-digit year found
+        # Prefer the last 4-digit year found.
+        # Rationale: In conference keys with multiple year mentions (e.g., 'acl2024_workshop2025'),
+        # the last year typically refers to the main conference year, while earlier years may refer
+        # to workshops or related events. This approach aims to extract the most relevant year for
+        # the main conference. If key formats change, this logic may need to be revisited.
         return int(f"20{four_digit_years[-1]}")
     
     # Check for 2-digit year at the end, possibly duplicated (e.g., "2525")
@@ -71,12 +80,12 @@ def extract_year_from_key(key: str) -> Optional[int]:
         # Check if the last four digits are a repeated two-digit sequence
         if len(key) >= 4 and key[-4:] == key[-2:] * 2:
             # Use the two-digit year from the repeated sequence
-            # Assume 20xx for years 20-35 to match database constraint (2020-2035)
-            if 20 <= year_suffix <= 35:
+            # Assume 20xx for years MIN_YEAR_SUFFIX..MAX_YEAR_SUFFIX to match DB constraint
+            if MIN_YEAR_SUFFIX <= year_suffix <= MAX_YEAR_SUFFIX:
                 return 2000 + year_suffix
         else:
             # Use the two-digit year if within database constraint range
-            if 20 <= year_suffix <= 35:
+            if MIN_YEAR_SUFFIX <= year_suffix <= MAX_YEAR_SUFFIX:
                 return 2000 + year_suffix
     
     return None
@@ -90,9 +99,9 @@ def extract_series_acronym_from_key(key: str) -> Optional[str]:
         neurips2024 -> neurips
         wmt2525 -> wmt
     """
-    # Remove year suffix (2 or 4 digits, possibly duplicated)
-    clean_key = re.sub(r'20\d{2}$', '', key)  # Remove 4-digit year
-    clean_key = re.sub(r'\d{2}(?:\d{2})?$', '', clean_key)  # Remove 2-digit year (possibly duplicated)
+    # Remove year suffix: either a 4-digit year (20xx) or duplicated 2-digit year (e.g., 2525) at the end
+    # This consolidated pattern avoids accidental removal of extra trailing digits preceding the year.
+    clean_key = re.sub(r'(20\d{2}|(\d{2})\2)$', '', key)
     
     if clean_key:
         return clean_key.lower()
@@ -140,12 +149,17 @@ def backfill_conferences(session: Session, series_map: dict[str, int], dry_run: 
     year_updated = 0
     series_updated = 0
     
+    # Cache extracted values to avoid redundant recomputation in coverage (especially for dry runs)
+    year_cache: dict[str, Optional[int]] = {}
+    acronym_cache: dict[str, Optional[str]] = {}
+    
     for conf in conferences:
         updated = False
         
         # Extract and set year if missing
         if conf.year is None:
             year = extract_year_from_key(conf.key)
+            year_cache[conf.key] = year
             if year:
                 if dry_run:
                     print(f"[DRY RUN] Would set year={year} for {conf.key}")
@@ -154,10 +168,14 @@ def backfill_conferences(session: Session, series_map: dict[str, int], dry_run: 
                     print(f"✓ Set year={year} for {conf.key}")
                 year_updated += 1
                 updated = True
+        else:
+            # Populate cache with existing value to simplify coverage computation
+            year_cache[conf.key] = conf.year
         
         # Extract and set series_id if missing
         if conf.series_id is None:
             acronym = extract_series_acronym_from_key(conf.key)
+            acronym_cache[conf.key] = acronym
             if acronym and acronym in series_map:
                 if dry_run:
                     print(f"[DRY RUN] Would set series_id={series_map[acronym]} ({acronym.upper()}) for {conf.key}")
@@ -166,6 +184,9 @@ def backfill_conferences(session: Session, series_map: dict[str, int], dry_run: 
                     print(f"✓ Set series_id={series_map[acronym]} ({acronym.upper()}) for {conf.key}")
                 series_updated += 1
                 updated = True
+        else:
+            # Explicitly store None to indicate we won't need a derived value for coverage
+            acronym_cache[conf.key] = None
         
         if updated:
             updated_count += 1
@@ -179,16 +200,19 @@ def backfill_conferences(session: Session, series_map: dict[str, int], dry_run: 
     print(f"  Year fields set: {year_updated}")
     print(f"  Series fields set: {series_updated}")
     
-    # Coverage stats
-    total_with_year = sum(1 for c in conferences if c.year is not None or extract_year_from_key(c.key) is not None)
+    # Coverage stats (use caches to avoid recomputation and ensure dry-run reflects potential updates)
+    total_with_year = sum(
+        1 for c in conferences
+        if (c.year is not None) or (year_cache.get(c.key) is not None)
+    )
     
     total_with_series = 0
     for c in conferences:
         if c.series_id is not None:
             total_with_series += 1
         else:
-            acronym = extract_series_acronym_from_key(c.key)
-            if acronym and acronym in series_map:
+            ac = acronym_cache.get(c.key)
+            if ac and ac in series_map:
                 total_with_series += 1
     
     print(f"\nCoverage after backfill:")
