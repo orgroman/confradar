@@ -21,9 +21,7 @@ class ConferenceSeries(TimestampMixin, Base):
         Index("ix_series_name", "name"),
     )
 
-    conferences: Mapped[list[Conference]] = relationship(
-        back_populates="series"
-    )
+    conferences: Mapped[list[Conference]] = relationship(back_populates="series")
 
 
 class Conference(TimestampMixin, Base):
