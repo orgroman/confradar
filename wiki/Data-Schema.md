@@ -485,3 +485,46 @@ Changes:
 - Added indexes: `ix_conference_year`, `ix_conference_series`, `ix_conference_dates` (`event_start_date`, `event_end_date`).
 
 Rationale: Align database with PRD and near-term schema plan to support series-level grouping and richer event metadata (year, venue, and event dates).
+
+## Data Backfill (v2)
+
+Date: 2025-11-02  
+Script: `scripts/backfill_series_and_year.py`
+
+### Purpose
+Populate `series_id` and `year` fields for existing conferences by extracting information from conference keys.
+
+### Extraction Logic
+
+**Year Extraction:**
+- Matches 4-digit years: `neurips2024` → 2024
+- Matches 2-digit years with 20xx assumption: `emnlp25` → 2025
+- Handles duplicated digits: `wmt2525` → 2025, `202525` → 2025
+
+**Series Matching:**
+- Removes year suffix from key: `emnlp25` → `emnlp`
+- Matches against 24 major series (NeurIPS, ICLR, ICML, AAAI, ACL, EMNLP, CVPR, KDD, WMT, CRAC, DISRPT, NLLP, etc.)
+- Case-insensitive matching
+
+### Coverage
+After initial backfill on 24 conferences:
+- **Year coverage**: ~67% (16/24 conferences)
+- **Series coverage**: ~54% (13/24 conferences)
+
+Lower coverage is expected since many entries are one-off workshops (bhasha25, hci25, t25, w25, nlp25) that don't belong to recurring series tracked in `conference_series`.
+
+### Usage
+
+```bash
+# Dry run (preview changes)
+python scripts/backfill_series_and_year.py --dry-run
+
+# Apply changes
+python scripts/backfill_series_and_year.py
+```
+
+### Idempotency
+The script is idempotent and safe to re-run:
+- Only updates conferences where `series_id` or `year` is NULL
+- Seeds `conference_series` table only if series doesn't exist
+- Can be run after importing new conferences to backfill their metadata
