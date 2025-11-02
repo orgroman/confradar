@@ -485,3 +485,43 @@ Changes:
 - Added indexes: `ix_conference_year`, `ix_conference_series`, `ix_conference_dates` (`event_start_date`, `event_end_date`).
 
 Rationale: Align database with PRD and near-term schema plan to support series-level grouping and richer event metadata (year, venue, and event dates).
+
+### Data Backfill (v2)
+
+Date: 2025-11-02  
+Script: `scripts/backfill_series_and_year.py`
+
+**Purpose**: Populate `series_id` and `year` fields for existing conferences by extracting patterns from conference keys.
+
+**Coverage**:
+- Seeded 24 major conference series (NeurIPS, ICLR, ICML, AAAI, ACL, EMNLP, CVPR, KDD, WMT, CRAC, DISRPT, NLLP, and others)
+- Year coverage: 66.7% (16/24 conferences)
+- Series coverage: 54.2% (13/24 conferences)
+
+**Extraction Logic**:
+1. **Year extraction**:
+   - Pattern `key25` → 2025 (2-digit suffix)
+   - Pattern `wmt2525` → 2025 (4-digit prefix)
+   - Pattern `202525` → 2025 (4-digit year embedded)
+   
+2. **Series matching**:
+   - Pattern `emnlp`, `emnlp25` → EMNLP series
+   - Pattern `wmt2525` → WMT series
+   - Pattern `neurips` → NeurIPS series
+   - One-off workshops/events remain unlinked (null `series_id`)
+
+**Usage**:
+```bash
+# Preview changes without committing
+uv run python scripts/backfill_series_and_year.py --dry-run
+
+# Apply backfill to database
+uv run python scripts/backfill_series_and_year.py
+```
+
+**Idempotency**: Script is safe to re-run; checks for existing series before creating, skips conferences that already have values.
+
+**Notes**:
+- Coverage below 90% is expected since many entries are one-off workshops (e.g., `bhasha25`, `hci25`, `t25`, `w25`, `nlp25`) that don't belong to recurring series.
+- As more conference data is ingested, scrapers should populate these fields directly (see issue #182).
+- `year` and `series_id` remain nullable; enforcement of NOT NULL constraints is a future enhancement.
