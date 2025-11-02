@@ -99,10 +99,13 @@ def extract_series_acronym_from_key(key: str) -> Optional[str]:
         neurips2024 -> neurips
         wmt2525 -> wmt
     """
-    # Remove year suffix: either a 4-digit year (20xx) or duplicated 2-digit year (e.g., 2525) at the end
+    # Remove year suffix at the end of the key:
+    # - 4-digit year (20xx)
+    # - duplicated 2-digit year (e.g., 2525)
+    # - simple 2-digit year in valid DB range (20-35), e.g., "emnlp25" -> "emnlp"
     # Use a non-capturing group for the 4-digit branch and a backreference for the duplicated 2-digit case.
-    # This avoids undefined backreferences when the first alternative matches.
-    clean_key = re.sub(r'(?:20\d{2}|(\d{2})\1)$', '', key)
+    # Note: the 2-digit range mirrors the DB constraint for years 2020-2035
+    clean_key = re.sub(r'(?:20\d{2}|(\d{2})\1|(?:2[0-9]|3[0-5]))$', '', key)
     
     if clean_key:
         return clean_key.lower()
