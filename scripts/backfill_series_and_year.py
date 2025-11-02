@@ -192,8 +192,11 @@ def backfill_conferences(session: Session, series_map: dict[str, int], dry_run: 
                 total_with_series += 1
     
     print(f"\nCoverage after backfill:")
-    print(f"  Conferences with year: {total_with_year}/{len(conferences)} ({100*total_with_year/len(conferences):.1f}%)")
-    print(f"  Conferences with series: {total_with_series}/{len(conferences)} ({100*total_with_series/len(conferences):.1f}%)")
+    if len(conferences) > 0:
+        print(f"  Conferences with year: {total_with_year}/{len(conferences)} ({100*total_with_year/len(conferences):.1f}%)")
+        print(f"  Conferences with series: {total_with_series}/{len(conferences)} ({100*total_with_series/len(conferences):.1f}%)")
+    else:
+        print("  No conferences found to calculate coverage.")
 
 
 def main():
