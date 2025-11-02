@@ -133,6 +133,12 @@ services:
       - web_node_modules:/app/node_modules
       - web_next:/app/.next
     command: ["sh", "-lc", "if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then (npm ci || npm install); fi; npm run dev -- -p 3100 -H 0.0.0.0"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3100/', (r) => {if (r.statusCode !== 200 && r.statusCode !== 304) throw new Error(r.statusCode)})"]
+      interval: 15s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
     restart: unless-stopped
 
   web-prod:
