@@ -5,15 +5,12 @@ Implements MCP tools for managing pull request review threads via GitHub GraphQL
 
 Core tools:
 - list_review_threads(owner, repo, pull_number, resolved?)
-- resolve_review_thread(owner, repo, thread_id)
-- unresolve_review_thread(owner, repo, thread_id)
+- resolve_review_thread(thread_id)
+- unresolve_review_thread(thread_id)
 - bulk_resolve_threads(owner, repo, pull_number, thread_ids?)
 
 Auth:
 - Uses a GitHub token from env: GITHUB_TOKEN or GH_TOKEN.
-
-Note: This server uses the Python MCP SDK. Ensure the 'mcp' package is installed
-(e.g., install the optional extra 'confradar[mcp]').
 """
 from __future__ import annotations
 
@@ -22,8 +19,10 @@ import os
 from typing import Any, Dict, List, Optional
 
 import httpx
+from mcp.server.fastmcp import FastMCP
 
-# Import MCP only inside main()/bootstrap paths so test/lint/imports don't break without the optional dep
+# Initialize FastMCP server
+mcp = FastMCP("github-pr-mcp")
 
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 
@@ -140,57 +139,73 @@ async def _bulk_resolve_threads(
     return {"resolved_count": len(resolved_ids), "resolved_ids": resolved_ids, "failed": failed}
 
 
+@mcp.tool()
+async def list_review_threads(
+    owner: str,
+    repo: str,
+    pull_number: int,
+    resolved: Optional[bool] = None
+) -> str:
+    """List review threads for a pull request.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        pull_number: Pull request number
+        resolved: Optional filter - True for resolved, False for unresolved, None for all
+    """
+    gh = GitHubGraphQLClient()
+    items = await _list_review_threads(gh, owner, repo, pull_number, resolved)
+    return json.dumps(items, indent=2)
+
+
+@mcp.tool()
+async def resolve_review_thread(thread_id: str) -> str:
+    """Resolve a specific review thread.
+    
+    Args:
+        thread_id: The GraphQL ID of the review thread to resolve
+    """
+    gh = GitHubGraphQLClient()
+    res = await _resolve_review_thread(gh, thread_id)
+    return json.dumps(res, indent=2)
+
+
+@mcp.tool()
+async def unresolve_review_thread(thread_id: str) -> str:
+    """Unresolve a specific review thread.
+    
+    Args:
+        thread_id: The GraphQL ID of the review thread to unresolve
+    """
+    gh = GitHubGraphQLClient()
+    res = await _unresolve_review_thread(gh, thread_id)
+    return json.dumps(res, indent=2)
+
+
+@mcp.tool()
+async def bulk_resolve_threads(
+    owner: str,
+    repo: str,
+    pull_number: int,
+    thread_ids: Optional[List[str]] = None
+) -> str:
+    """Resolve multiple review threads at once.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        pull_number: Pull request number
+        thread_ids: Optional list of specific thread IDs to resolve. If None, resolves all unresolved threads
+    """
+    gh = GitHubGraphQLClient()
+    summary = await _bulk_resolve_threads(gh, owner, repo, pull_number, thread_ids)
+    return json.dumps(summary, indent=2)
+
+
 def main() -> None:
-    # Defer MCP imports so the module can be imported without the optional dependency present
-    from mcp.server import Server
-    from mcp.server.stdio import stdio_server
-    from pydantic import BaseModel
-
-    server = Server("github-pr-mcp")
-
-    class ListThreadsArgs(BaseModel):
-        owner: str
-        repo: str
-        pull_number: int
-        resolved: Optional[bool] = None
-
-    @server.tool("list_review_threads", args_schema=ListThreadsArgs)
-    async def list_review_threads(params: ListThreadsArgs):
-        gh = GitHubGraphQLClient()
-        items = await _list_review_threads(gh, params.owner, params.repo, params.pull_number, params.resolved)
-        # Return as a compact JSON string for easier display
-        return json.dumps(items, indent=2)
-
-    class ThreadIdArgs(BaseModel):
-        thread_id: str
-
-    @server.tool("resolve_review_thread", args_schema=ThreadIdArgs)
-    async def resolve_review_thread(params: ThreadIdArgs):
-        gh = GitHubGraphQLClient()
-        res = await _resolve_review_thread(gh, params.thread_id)
-        return json.dumps(res, indent=2)
-
-    @server.tool("unresolve_review_thread", args_schema=ThreadIdArgs)
-    async def unresolve_review_thread(params: ThreadIdArgs):
-        gh = GitHubGraphQLClient()
-        res = await _unresolve_review_thread(gh, params.thread_id)
-        return json.dumps(res, indent=2)
-
-    class BulkResolveArgs(BaseModel):
-        owner: str
-        repo: str
-        pull_number: int
-        thread_ids: Optional[List[str]] = None
-
-    @server.tool("bulk_resolve_threads", args_schema=BulkResolveArgs)
-    async def bulk_resolve_threads(params: BulkResolveArgs):
-        gh = GitHubGraphQLClient()
-        summary = await _bulk_resolve_threads(
-            gh, params.owner, params.repo, params.pull_number, params.thread_ids
-        )
-        return json.dumps(summary, indent=2)
-
-    stdio_server.run(server)
+    """Run the MCP server."""
+    mcp.run(transport='stdio')
 
 
 if __name__ == "__main__":
