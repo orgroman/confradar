@@ -155,7 +155,7 @@ async def _bulk_resolve_threads(
     pull_number: int,
     thread_ids: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
-    if not thread_ids:
+    if thread_ids is None:
         threads = await _list_review_threads(gh, owner, repo, pull_number, resolved=False)
         thread_ids = [t["id"] for t in threads]
 

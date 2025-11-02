@@ -1,8 +1,6 @@
 """Tests for GitHub PR MCP server."""
 from __future__ import annotations
 
-import json
-from typing import Any, Dict
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -191,6 +189,23 @@ async def test_bulk_resolve_threads_partial_failure(mock_gh_client):
     assert len(result["failed"]) == 1
     assert result["failed"][0]["thread_id"] == "PRRT_2"
     assert "Network error" in result["failed"][0]["error"]
+
+
+@pytest.mark.asyncio
+async def test_bulk_resolve_threads_empty_list(mock_gh_client):
+    """Test bulk resolve with empty list resolves zero threads."""
+    # With empty list, no queries should be made to resolve threads
+    # This tests the fix for the bug where [] was treated same as None
+    
+    result = await _bulk_resolve_threads(
+        mock_gh_client, "owner", "repo", 123, thread_ids=[]
+    )
+
+    assert result["resolved_count"] == 0
+    assert result["resolved_ids"] == []
+    assert len(result["failed"]) == 0
+    # Should make no GraphQL calls since list is empty
+    mock_gh_client.query.assert_not_called()
 
 
 @pytest.mark.asyncio
