@@ -53,9 +53,9 @@ def test_daily_schedule_exists():
     schedule_names = [s.name for s in defs.schedules]
     assert "daily_crawl_schedule" in schedule_names
 
-    # Verify cron schedule
+    # Verify cron schedule (hourly at minute 0)
     daily_schedule = [s for s in defs.schedules if s.name == "daily_crawl_schedule"][0]
-    assert daily_schedule.cron_schedule == "0 2 * * *"
+    assert daily_schedule.cron_schedule == "0 * * * *"
 
 
 @pytest.mark.integration
