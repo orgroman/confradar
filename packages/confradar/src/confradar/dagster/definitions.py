@@ -42,7 +42,7 @@ daily_crawl_schedule = ScheduleDefinition(
     job=crawl_job,
     cron_schedule="0 * * * *",  # Run once per hour (at minute 0)
     description="Run crawl pipeline once per hour",
-    default_status=DefaultScheduleStatus.RUNNING,  # auto-start when code location reloads
+    default_status=DefaultScheduleStatus.RUNNING,  # automatically enabled when deployed
     execution_timezone="UTC",
 )
 
