@@ -473,3 +473,15 @@ SELECT * FROM pg_stat_statements ORDER BY total_exec_time DESC LIMIT 10;
 **Document Status**: Complete  
 **Last Updated**: 2025-10-26  
 **Maintained By**: ConfRadar Team
+
+## Schema Update (v2)
+
+Date: 2025-11-02  
+Revision: b752be5b88c0 (followed by empty linearization b2a3c4d5e6f7)
+
+Changes:
+- Introduced new table `conference_series` with columns: `id`, `name`, `short_name` (UNIQUE), `homepage`, `notes`, `created_at`, `updated_at`; index `ix_series_name`.
+- Enhanced `conferences` with additional fields: `series_id` (FK → `conference_series.id` ON DELETE SET NULL), `year` (CHECK between 2020..2035), `location`, `event_start_date`, `event_end_date`, `submission_url`, and `notes`.
+- Added indexes: `ix_conference_year`, `ix_conference_series`, `ix_conference_dates` (`event_start_date`, `event_end_date`).
+
+Rationale: Align database with PRD and near-term schema plan to support series-level grouping and richer event metadata (year, venue, and event dates).
