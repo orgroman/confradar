@@ -142,7 +142,7 @@ async def _bulk_resolve_threads(
 
 def main() -> None:
     # Defer MCP imports so the module can be imported without the optional dependency present
-    from mcp import Server
+    from mcp.server import Server
     from mcp.server.stdio import stdio_server
     from pydantic import BaseModel
 
