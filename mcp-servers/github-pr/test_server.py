@@ -9,6 +9,7 @@ import pytest
 
 from server import (
     GitHubGraphQLClient,
+    _add_comment_to_thread,
     _bulk_resolve_threads,
     _list_review_threads,
     _resolve_review_thread,
@@ -219,3 +220,40 @@ async def test_github_client_graphql_error():
             
             with pytest.raises(RuntimeError, match="GraphQL errors"):
                 await client.query("query { }", {})
+
+
+@pytest.mark.asyncio
+async def test_add_comment_to_thread():
+    """Test adding a comment to a review thread."""
+    with patch.dict("os.environ", {"GITHUB_TOKEN": "fake-token"}):
+        client = GitHubGraphQLClient()
+        
+        # Mock the response
+        mock_response = AsyncMock()
+        mock_response.json = lambda: {
+            "data": {
+                "addPullRequestReviewThreadReply": {
+                    "comment": {
+                        "id": "PRRC_test123",
+                        "url": "https://github.com/owner/repo/pull/1#discussion_r123456",
+                        "body": "This is my justification comment"
+                    }
+                }
+            }
+        }
+        mock_response.raise_for_status = lambda: None
+        
+        mock_client = AsyncMock()
+        mock_client.post = AsyncMock(return_value=mock_response)
+        
+        with patch("httpx.AsyncClient") as mock_client_cls:
+            mock_client_cls.return_value.__aenter__.return_value = mock_client
+            
+            result = await _add_comment_to_thread(
+                client, "PRRT_thread123", "This is my justification comment"
+            )
+            
+            assert result["id"] == "PRRC_test123"
+            assert "justification" in result["body"]
+            assert result["url"].startswith("https://github.com")
+

@@ -81,6 +81,31 @@ mutation($threadId:ID!){
 }
 """
 
+ADD_COMMENT_MUTATION = """
+mutation($pullRequestId:ID!, $body:String!, $commitOID:GitObjectID!, $path:String!, $position:Int!) {
+  addPullRequestReviewComment(input:{
+    pullRequestId:$pullRequestId
+    body:$body
+    commitOID:$commitOID
+    path:$path
+    position:$position
+  }) {
+    comment { id url body }
+  }
+}
+"""
+
+ADD_REPLY_MUTATION = """
+mutation($pullRequestReviewThreadId:ID!, $body:String!) {
+  addPullRequestReviewThreadReply(input:{
+    pullRequestReviewThreadId:$pullRequestReviewThreadId
+    body:$body
+  }) {
+    comment { id url body }
+  }
+}
+"""
+
 
 async def _list_review_threads(
     gh: GitHubGraphQLClient,
@@ -111,6 +136,16 @@ async def _resolve_review_thread(gh: GitHubGraphQLClient, thread_id: str) -> Dic
 async def _unresolve_review_thread(gh: GitHubGraphQLClient, thread_id: str) -> Dict[str, Any]:
     data = await gh.query(UNRESOLVE_THREAD_MUTATION, {"threadId": thread_id})
     return data.get("unresolveReviewThread", {}).get("thread", {})
+
+
+async def _add_comment_to_thread(
+    gh: GitHubGraphQLClient, thread_id: str, body: str
+) -> Dict[str, Any]:
+    """Add a reply comment to an existing review thread."""
+    data = await gh.query(
+        ADD_REPLY_MUTATION, {"pullRequestReviewThreadId": thread_id, "body": body}
+    )
+    return data.get("addPullRequestReviewThreadReply", {}).get("comment", {})
 
 
 async def _bulk_resolve_threads(
@@ -201,6 +236,19 @@ async def bulk_resolve_threads(
     gh = GitHubGraphQLClient()
     summary = await _bulk_resolve_threads(gh, owner, repo, pull_number, thread_ids)
     return json.dumps(summary, indent=2)
+
+
+@mcp.tool()
+async def add_comment_to_thread(thread_id: str, body: str) -> str:
+    """Add a reply comment to an existing review thread.
+    
+    Args:
+        thread_id: The GraphQL ID of the review thread to comment on
+        body: The comment body (markdown supported)
+    """
+    gh = GitHubGraphQLClient()
+    comment = await _add_comment_to_thread(gh, thread_id, body)
+    return json.dumps(comment, indent=2)
 
 
 def main() -> None:
