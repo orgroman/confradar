@@ -56,10 +56,15 @@ dev = [
   "dagster-dg"
 ]
 
+mcp = [
+  "mcp>=0.1.0",
+]
+
 [project.scripts]
 # The CLI entrypoint lives in the library for reuse; the app will publish this script in releases
 # Keeping it here ensures local runs work even if the app isn't installed separately
 confradar = "confradar.cli:main"
+confradar-github-mcp = "confradar.mcp.github_pr_server:main"
 
 [tool.black]
 line-length = 100
