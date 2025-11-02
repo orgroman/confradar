@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     openai_timeout_s: float = Field(default=20.0, alias="OPENAI_TIMEOUT_S")
     openai_max_retries: int = Field(default=3, alias="OPENAI_MAX_RETRIES")
 
+    # Logging configuration
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    log_format: str = Field(
+        default="console",
+        alias="LOG_FORMAT",
+        description="Logging format: 'console' for human-readable or 'json' for structured",
+    )
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

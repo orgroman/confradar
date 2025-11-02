@@ -5,6 +5,7 @@ import sys
 
 import httpx
 
+from confradar.logging import setup_logging
 from confradar.parsers.dates import extract_dates_from_text
 
 
@@ -48,6 +49,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Initialize logging early
+    setup_logging()
+    
     parser = build_parser()
     ns = parser.parse_args(argv)
     return ns.func(ns)
