@@ -35,8 +35,8 @@ crawl_job = define_asset_job(
 daily_crawl_schedule = ScheduleDefinition(
     name="daily_crawl_schedule",
     job=crawl_job,
-    cron_schedule="0 2 * * *",  # Run at 2 AM daily
-    description="Run daily conference crawl pipeline",
+    cron_schedule="0 * * * *",  # Run once per hour (at minute 0)
+    description="Run crawl pipeline once per hour",
 )
 
 # Main Definitions object

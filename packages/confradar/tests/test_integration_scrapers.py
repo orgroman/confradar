@@ -83,9 +83,7 @@ def run_spider_and_collect(spider_cls) -> list[dict]:
         List of scraped items as dictionaries
     """
     # Create temporary file for output
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False
-    ) as tmp_file:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as tmp_file:
         output_file = Path(tmp_file.name)
 
     try:

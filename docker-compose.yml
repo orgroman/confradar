@@ -55,13 +55,16 @@ services:
     container_name: dagster-daemon
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://confradar:confradar@postgres:5432/confradar}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://confradar:confradar@postgres:5432/confradar}
       CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
       - ./packages/confradar:/opt/dagster/app
       - dagster_data:/opt/dagster/data
       - dagster_home:/opt/dagster/dagster_home
+      # Ensure Dagster finds instance and workspace configs even with a named volume
+      - ./packages/confradar/workspace.yaml:/opt/dagster/dagster_home/workspace.yaml:ro
+      - ./packages/confradar/dagster.yaml:/opt/dagster/dagster_home/dagster.yaml:ro
     command: ["uv", "run", "dagster-daemon", "run"]
     restart: unless-stopped
     depends_on:
@@ -79,13 +82,16 @@ services:
       - "3000:3000"
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://confradar:confradar@postgres:5432/confradar}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://confradar:confradar@postgres:5432/confradar}
       CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
       - ./packages/confradar:/opt/dagster/app
       - dagster_data:/opt/dagster/data
       - dagster_home:/opt/dagster/dagster_home
+      # Ensure Dagster finds instance and workspace configs even with a named volume
+      - ./packages/confradar/workspace.yaml:/opt/dagster/dagster_home/workspace.yaml:ro
+      - ./packages/confradar/dagster.yaml:/opt/dagster/dagster_home/dagster.yaml:ro
     command: ["uv", "run", "dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
     restart: unless-stopped
     depends_on:

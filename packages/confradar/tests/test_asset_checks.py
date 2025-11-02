@@ -15,7 +15,6 @@ from confradar.dagster.assets.checks import (
 )
 from confradar.db.base import Base
 from confradar.db.models import Conference, Deadline, Source
-from confradar.settings import Settings
 
 
 @pytest.fixture
@@ -209,7 +208,7 @@ def test_all_checks_registered_in_definitions():
 
     # Use check_key attribute instead of name
     check_keys = [str(check.check_key) for check in defs.asset_checks]
-    
+
     # Verify all expected checks are present
     assert any("check_conference_count" in key for key in check_keys)
     assert any("check_required_fields" in key for key in check_keys)
