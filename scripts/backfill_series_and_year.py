@@ -12,10 +12,9 @@ from __future__ import annotations
 
 import argparse
 import re
-import sys
 from typing import Optional
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from confradar.db import Conference, ConferenceSeries, get_engine
@@ -59,18 +58,26 @@ def extract_year_from_key(key: str) -> Optional[int]:
         wmt2525 -> 2025 (handles duplicated digits)
         202525 -> 2025
     """
-    # Try 4-digit year first
-    match = re.search(r'20(\d{2})', key)
-    if match:
-        return int(f"20{match.group(1)}")
+    # Find all 4-digit year matches
+    four_digit_years = re.findall(r'20(\d{2})', key)
+    if four_digit_years:
+        # Prefer the last 4-digit year found
+        return int(f"20{four_digit_years[-1]}")
     
-    # Try 2-digit year
-    match = re.search(r'(\d{2})(?:\1)?$', key)  # Handles duplicated digits like "2525"
+    # Check for 2-digit year at the end, possibly duplicated (e.g., "2525")
+    match = re.search(r'(\d{2})$', key)
     if match:
         year_suffix = int(match.group(1))
-        # Assume 20xx for years 24-99, 20xx for anything reasonable
-        if 24 <= year_suffix <= 99:
-            return 2000 + year_suffix
+        # Check if the last four digits are a repeated two-digit sequence
+        if len(key) >= 4 and key[-4:] == key[-2:] * 2:
+            # Use the two-digit year from the repeated sequence
+            # Assume 20xx for years 20-35 to match database constraint (2020-2035)
+            if 20 <= year_suffix <= 35:
+                return 2000 + year_suffix
+        else:
+            # Use the two-digit year if within database constraint range
+            if 20 <= year_suffix <= 35:
+                return 2000 + year_suffix
     
     return None
 
@@ -173,8 +180,16 @@ def backfill_conferences(session: Session, series_map: dict[str, int], dry_run: 
     print(f"  Series fields set: {series_updated}")
     
     # Coverage stats
-    total_with_year = sum(1 for c in conferences if c.year is not None or extract_year_from_key(c.key))
-    total_with_series = sum(1 for c in conferences if c.series_id is not None or (extract_series_acronym_from_key(c.key) in series_map if extract_series_acronym_from_key(c.key) else False))
+    total_with_year = sum(1 for c in conferences if c.year is not None or extract_year_from_key(c.key) is not None)
+    
+    total_with_series = 0
+    for c in conferences:
+        if c.series_id is not None:
+            total_with_series += 1
+        else:
+            acronym = extract_series_acronym_from_key(c.key)
+            if acronym and acronym in series_map:
+                total_with_series += 1
     
     print(f"\nCoverage after backfill:")
     print(f"  Conferences with year: {total_with_year}/{len(conferences)} ({100*total_with_year/len(conferences):.1f}%)")
