@@ -3,7 +3,12 @@
 This module defines all Dagster assets, jobs, schedules, and sensors for ConfRadar.
 """
 
-from dagster import Definitions, ScheduleDefinition, define_asset_job
+from dagster import (
+    DefaultScheduleStatus,
+    Definitions,
+    ScheduleDefinition,
+    define_asset_job,
+)
 
 from confradar.dagster.assets.checks import (
     check_conference_count,
@@ -37,6 +42,8 @@ daily_crawl_schedule = ScheduleDefinition(
     job=crawl_job,
     cron_schedule="0 * * * *",  # Run once per hour (at minute 0)
     description="Run crawl pipeline once per hour",
+    default_status=DefaultScheduleStatus.RUNNING,  # auto-start when code location reloads
+    execution_timezone="UTC",
 )
 
 # Main Definitions object
