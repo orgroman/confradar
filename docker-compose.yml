@@ -106,6 +106,12 @@ services:
       - ./packages/confradar/workspace.yaml:/opt/dagster/dagster_home/workspace.yaml:ro
       - ./packages/confradar/dagster.yaml:/opt/dagster/dagster_home/dagster.yaml:ro
     command: ["uv", "run", "dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/server_info"]
+      interval: 15s
+      timeout: 5s
+      start_period: 15s
+      retries: 5
     restart: unless-stopped
     depends_on:
       postgres:
