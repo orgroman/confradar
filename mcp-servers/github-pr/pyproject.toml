@@ -8,19 +8,22 @@ version = "0.1.0"
 description = "MCP server for GitHub PR review conversation management"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [ { name = "orgroman" } ]
 keywords = ["mcp", "github", "pull-request", "review", "conversations"]
-classifiers = [
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent"
-]
 dependencies = [
   "httpx>=0.27",
   "mcp>=0.1.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2",
+  "pytest-asyncio>=0.23",
+]
+
 [project.scripts]
 github-pr-mcp = "server:main"
+
+[tool.setuptools]
+py-modules = ["server"]
