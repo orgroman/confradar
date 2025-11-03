@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 from io import StringIO
 
 import pytest
@@ -9,6 +10,7 @@ import pytest
 from confradar.logging import (
     ContextFilter,
     CustomJsonFormatter,
+    SensitiveDataFilter,
     add_logging_context,
     get_logger,
     setup_logging,
@@ -48,6 +50,38 @@ class TestLoggingSetup:
             setup_logging(log_level=level, force=True)
             root_logger = logging.getLogger()
             assert root_logger.level == getattr(logging, level)
+
+    def test_setup_logging_case_insensitive(self):
+        """Test that log level and format are case-insensitive."""
+        setup_logging(log_level="info", log_format="JSON", force=True)
+        root_logger = logging.getLogger()
+        assert root_logger.level == logging.INFO
+        handler = root_logger.handlers[0]
+        assert isinstance(handler.formatter, CustomJsonFormatter)
+
+    def test_setup_logging_invalid_level(self, capsys):
+        """Test that invalid log level defaults to INFO with warning."""
+        setup_logging(log_level="INVALID", force=True)
+        root_logger = logging.getLogger()
+        assert root_logger.level == logging.INFO
+        
+        # Check warning was printed
+        captured = capsys.readouterr()
+        assert "WARNING" in captured.err
+        assert "Invalid LOG_LEVEL" in captured.err
+
+    def test_setup_logging_invalid_format(self, capsys):
+        """Test that invalid log format defaults to console with warning."""
+        setup_logging(log_format="INVALID", force=True)
+        root_logger = logging.getLogger()
+        handler = root_logger.handlers[0]
+        assert isinstance(handler.formatter, logging.Formatter)
+        assert not isinstance(handler.formatter, CustomJsonFormatter)
+        
+        # Check warning was printed
+        captured = capsys.readouterr()
+        assert "WARNING" in captured.err
+        assert "Invalid LOG_FORMAT" in captured.err
 
     def test_setup_logging_idempotent(self):
         """Test that setup_logging is idempotent when force=False."""
@@ -203,6 +237,154 @@ class TestCustomJsonFormatter:
         assert "exc_info" in log_data
         assert "ValueError" in log_data["exc_info"]
         assert "Test error" in log_data["exc_info"]
+
+    def test_json_formatter_iso8601_timestamp(self):
+        """Test that JSON formatter uses ISO 8601 timestamp with UTC timezone."""
+        stream = StringIO()
+        handler = logging.StreamHandler(stream)
+        handler.setFormatter(
+            CustomJsonFormatter("%(timestamp)s %(level)s %(message)s")
+        )
+        
+        logger = logging.getLogger("test_timestamp")
+        logger.handlers = [handler]
+        logger.setLevel(logging.INFO)
+        
+        # Log a message
+        logger.info("Test timestamp")
+        
+        output = stream.getvalue().strip()
+        log_data = json.loads(output)
+        
+        # Check timestamp format
+        timestamp = log_data["timestamp"]
+        # ISO 8601 format with timezone: 2025-11-02T14:30:45.123456+00:00 or ...Z
+        assert "T" in timestamp  # Has date-time separator
+        assert ("+" in timestamp or "Z" in timestamp)  # Has timezone info
+
+    def test_json_formatter_service_metadata(self):
+        """Test that JSON formatter includes service metadata."""
+        stream = StringIO()
+        handler = logging.StreamHandler(stream)
+        handler.setFormatter(
+            CustomJsonFormatter("%(timestamp)s %(level)s %(message)s")
+        )
+        
+        logger = logging.getLogger("test_metadata")
+        logger.handlers = [handler]
+        logger.setLevel(logging.INFO)
+        
+        # Set env for testing
+        original_env = os.getenv("APP_ENV")
+        os.environ["APP_ENV"] = "test"
+        
+        try:
+            # Log a message
+            logger.info("Test metadata")
+            
+            output = stream.getvalue().strip()
+            log_data = json.loads(output)
+            
+            # Check service metadata
+            assert log_data["service"] == "confradar"
+            assert "version" in log_data
+            assert log_data["env"] == "test"
+        finally:
+            # Restore original env
+            if original_env:
+                os.environ["APP_ENV"] = original_env
+            else:
+                os.environ.pop("APP_ENV", None)
+
+
+class TestSensitiveDataFilter:
+    """Tests for SensitiveDataFilter."""
+
+    def test_redacts_sensitive_fields(self):
+        """Test that sensitive fields are redacted."""
+        sensitive_filter = SensitiveDataFilter()
+        
+        # Create a log record with sensitive fields
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=1,
+            msg="Test message",
+            args=(),
+            exc_info=None,
+        )
+        
+        # Add sensitive attributes
+        record.api_key = "secret-key-123"
+        record.password = "my-password"
+        record.token = "bearer-token"
+        record.normal_field = "not-sensitive"
+        
+        # Apply filter
+        sensitive_filter.filter(record)
+        
+        # Check that sensitive fields are redacted
+        assert record.api_key == "***REDACTED***"
+        assert record.password == "***REDACTED***"
+        assert record.token == "***REDACTED***"
+        
+        # Normal fields should not be redacted
+        assert record.normal_field == "not-sensitive"
+
+    def test_case_insensitive_matching(self):
+        """Test that pattern matching is case-insensitive."""
+        sensitive_filter = SensitiveDataFilter()
+        
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=1,
+            msg="Test",
+            args=(),
+            exc_info=None,
+        )
+        
+        # Add fields with various cases
+        record.API_KEY = "key1"
+        record.ApiKey = "key2"
+        record.api_key = "key3"
+        
+        sensitive_filter.filter(record)
+        
+        assert record.API_KEY == "***REDACTED***"
+        assert record.ApiKey == "***REDACTED***"
+        assert record.api_key == "***REDACTED***"
+
+    def test_integrated_with_setup(self):
+        """Test that sensitive data filter is integrated in setup_logging."""
+        setup_logging(log_level="INFO", log_format="json", force=True)
+        
+        stream = StringIO()
+        handler = logging.StreamHandler(stream)
+        handler.setFormatter(
+            CustomJsonFormatter("%(timestamp)s %(level)s %(message)s")
+        )
+        
+        # Add sensitive filter to handler
+        from confradar.logging import SensitiveDataFilter
+        handler.addFilter(SensitiveDataFilter())
+        
+        logger = logging.getLogger("test_sensitive")
+        logger.handlers = [handler]
+        logger.setLevel(logging.INFO)
+        
+        # Log with sensitive extra field
+        logger.info("Processing", extra={"api_key": "secret123", "user": "john"})
+        
+        output = stream.getvalue().strip()
+        log_data = json.loads(output)
+        
+        # Sensitive field should be redacted
+        assert log_data["api_key"] == "***REDACTED***"
+        # Non-sensitive field should be preserved
+        assert log_data["user"] == "john"
 
 
 class TestLoggingIntegration:

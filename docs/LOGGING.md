@@ -8,11 +8,16 @@ ConfRadar uses structured logging to provide consistent, machine-readable logs a
 
 ## Features
 
-- **Structured JSON Logging**: Machine-readable logs with consistent field names
+- **Structured JSON Logging**: Machine-readable logs with consistent field names and ISO 8601 timestamps
 - **Console Logging**: Human-readable logs for development
+- **Timezone-Aware Timestamps**: ISO 8601 format with UTC timezone for cross-system correlation
+- **Service Metadata**: Automatic service, version, and environment fields
+- **Sensitive Data Redaction**: Automatic filtering of API keys, tokens, passwords, and secrets
 - **Contextual Information**: Automatic inclusion of timestamps, levels, module names, functions, and line numbers
-- **Context Injection**: Add custom fields (request IDs, user IDs, etc.) to log records
-- **Configurable**: Control log level and format via environment variables
+- **Context Injection**: Add custom fields (request IDs, trace IDs, etc.) to log records
+- **Configurable**: Control log level and format via environment variables (case-insensitive)
+- **Validation**: Invalid configuration values default with warnings
+- **Idempotent Setup**: Safe to call multiple times without duplicating handlers
 - **Integration**: Works seamlessly with Dagster's logging system
 
 ## Configuration
@@ -20,11 +25,14 @@ ConfRadar uses structured logging to provide consistent, machine-readable logs a
 Logging is configured via environment variables in `.env` or system environment:
 
 ```bash
-# Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+# Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL (case-insensitive)
 LOG_LEVEL=INFO
 
-# Log format: 'console' (human-readable) or 'json' (structured)
+# Log format: 'console' (human-readable) or 'json' (structured, case-insensitive)
 LOG_FORMAT=console
+
+# Optional: Environment name (dev/test/staging/production)
+APP_ENV=production
 ```
 
 ### Console Format (Development)
@@ -38,15 +46,24 @@ LOG_FORMAT=console
 
 ```json
 {
-  "timestamp": "2025-11-02 14:30:45",
+  "timestamp": "2025-11-03T05:15:32.948289+00:00",
   "level": "INFO",
   "logger": "confradar.scrapers.ai_deadlines",
   "module": "ai_deadlines",
   "function": "parse",
   "line": 42,
+  "service": "confradar",
+  "version": "0.1.0",
+  "env": "production",
   "message": "Scraping AI Deadlines"
 }
 ```
+
+**Key Fields:**
+- `timestamp`: ISO 8601 with UTC timezone (e.g., `2025-11-03T05:15:32.948289+00:00`)
+- `service`: Always "confradar" for identifying logs across services
+- `version`: Package version from `__version__`
+- `env`: Environment from `APP_ENV` or `ENV` environment variable
 
 ## Usage
 
@@ -82,12 +99,51 @@ In JSON format, this produces:
 
 ```json
 {
-  "timestamp": "2025-11-02 14:30:45",
+  "timestamp": "2025-11-03T05:15:32.948289+00:00",
   "level": "INFO",
+  "service": "confradar",
+  "version": "0.1.0",
+  "env": "production",
   "message": "User action",
   "user_id": 123,
   "action": "login",
   "ip_address": "192.168.1.1"
+}
+```
+
+### Sensitive Data Redaction
+
+The logging system automatically redacts sensitive fields matching these patterns (case-insensitive):
+- `api_key`, `apikey`, `api-key`
+- `token`
+- `password`
+- `secret`
+- `auth`, `authorization`
+- `credential`
+
+Example:
+
+```python
+logger.info(
+    "Conference saved",
+    extra={
+        "conf_key": "icml-2025",
+        "api_key": "secret123",  # Will be redacted
+        "source": "ai-deadlines"
+    }
+)
+```
+
+Output (JSON):
+
+```json
+{
+  "timestamp": "2025-11-03T05:15:32.948289+00:00",
+  "level": "INFO",
+  "message": "Conference saved",
+  "conf_key": "icml-2025",
+  "api_key": "***REDACTED***",
+  "source": "ai-deadlines"
 }
 ```
 

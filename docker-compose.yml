@@ -65,6 +65,10 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://confradar:confradar@postgres:5432/confradar}
       CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Structured logging: JSON format for production, INFO level by default
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      APP_ENV: ${APP_ENV:-production}
     volumes:
       - ./packages/confradar:/opt/dagster/app
       - dagster_data:/opt/dagster/data
@@ -98,6 +102,10 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://confradar:confradar@postgres:5432/confradar}
       CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Structured logging: JSON format for production, INFO level by default
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      APP_ENV: ${APP_ENV:-production}
     volumes:
       - ./packages/confradar:/opt/dagster/app
       - dagster_data:/opt/dagster/data
