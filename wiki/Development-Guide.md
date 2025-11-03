@@ -2,6 +2,29 @@
 
 This guide covers development workflows for the ConfRadar monorepo with uv and the LiteLLM proxy.
 
+## Quick Start Options
+
+### Option 1: GitHub Codespaces (Recommended for Quick Start)
+
+Get started in seconds with zero local setup:
+
+1. Click **"Open in GitHub Codespaces"** from the README
+2. Wait 3-5 minutes for automatic setup
+3. Configure your OpenAI API key in Codespace secrets
+4. All services start automatically
+
+**→ [Full Codespaces Setup Guide](../docs/CODESPACES_SETUP.md)**
+
+**Perfect for:**
+- New contributors
+- Testing PRs
+- Working from any device
+- Avoiding local Docker/PostgreSQL setup
+
+### Option 2: Local Development
+
+Traditional local setup with full control:
+
 ## Environment
 
 - Python: 3.10+

@@ -1,0 +1,132 @@
+{
+  "name": "Confradar Full Stack",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "workspace",
+  "workspaceFolder": "/workspace",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "vscode",
+      "uid": "1000",
+      "gid": "1000"
+    }
+  },
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "eamodio.gitlens",
+        "ms-vscode.makefile-tools"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "python.linting.enabled": true,
+        "python.linting.ruffEnabled": true,
+        "python.formatting.provider": "none",
+        "[python]": {
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash",
+            "icon": "terminal-bash"
+          },
+          "zsh": {
+            "path": "/bin/zsh"
+          }
+        },
+        "files.watcherExclude": {
+          "**/.venv/**": true,
+          "**/node_modules/**": true,
+          "**/.git/objects/**": true,
+          "**/.git/subtree-cache/**": true,
+          "**/dist/**": true,
+          "**/.next/**": true
+        },
+        "search.exclude": {
+          "**/.venv": true,
+          "**/node_modules": true,
+          "**/.next": true
+        },
+        "git.autofetch": true,
+        "git.confirmSync": false
+      }
+    }
+  },
+  
+  "postCreateCommand": "bash /workspace/.devcontainer/setup_codespaces.sh",
+  
+  "forwardPorts": [3000, 3001, 3100, 4000, 5432, 5050],
+  
+  "portsAttributes": {
+    "3000": {
+      "label": "Dagster Web UI",
+      "onAutoForward": "notify"
+    },
+    "3001": {
+      "label": "Next.js Dev Server (deprecated)",
+      "onAutoForward": "silent"
+    },
+    "3100": {
+      "label": "Next.js Dev Server",
+      "onAutoForward": "notify"
+    },
+    "4000": {
+      "label": "LiteLLM Proxy",
+      "onAutoForward": "silent"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
+    },
+    "5050": {
+      "label": "pgAdmin",
+      "onAutoForward": "silent"
+    }
+  },
+  
+  "remoteEnv": {
+    "DATABASE_URL": "postgresql+psycopg2://confradar:confradar@postgres:5432/confradar",
+    "DAGSTER_HOME": "/workspace/packages/confradar/dagster_home",
+    "CONFRADAR_SA_OPENAI": "${localEnv:CONFRADAR_SA_OPENAI}",
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}"
+  },
+  
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+  
+  "postStartCommand": "docker compose up -d",
+  
+  "remoteUser": "vscode"
+}

@@ -28,6 +28,7 @@ dependencies = [
   "psycopg2-binary>=2.9",
   "scrapy>=2.11",
   "playwright>=1.40",
+  "scrapy-playwright>=0.0.30",
   "dagster>=1.12",
   "dagster-webserver>=1.12",
   "dagster-postgres>=0.24",
