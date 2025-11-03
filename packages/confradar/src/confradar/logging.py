@@ -146,8 +146,9 @@ class CustomJsonFormatter(JsonFormatter):
         """
         super().add_fields(log_record, record, message_dict)
         
-        # Add ISO 8601 timestamp with UTC timezone
-        log_record["timestamp"] = datetime.now(timezone.utc).isoformat()
+        # Add ISO 8601 timestamp with UTC timezone (using log creation time)
+        dt = datetime.fromtimestamp(record.created, tz=timezone.utc)
+        log_record["timestamp"] = dt.isoformat()
         
         # Add standard structured fields
         log_record["level"] = record.levelname
