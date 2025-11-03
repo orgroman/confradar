@@ -27,9 +27,11 @@ All project secrets (API keys, credentials, etc.) are managed securely in **Azur
 - Only sync secrets to GitHub if required for automation.
 
 See [Architecture](Architecture) and [Development Guide](Development-Guide) for more details on environment configuration.
+
 - [Project Overview](Overview)
 - [Architecture](Architecture)
 - [Getting Started](Getting-Started)
+- **[Codespaces Setup](Codespaces-Setup)** - Zero-setup cloud development environment
 - [Development Guide](Development-Guide)
 - [Scraper Development](Scraper-Development)
 - [Dagster Orchestration](Dagster-Orchestration.md)
