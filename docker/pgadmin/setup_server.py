@@ -4,7 +4,6 @@ Pre-configure pgAdmin with server connection and saved password.
 This script runs on container startup to set up the default server.
 """
 
-import json
 import os
 import sqlite3
 from pathlib import Path
@@ -82,7 +81,7 @@ if __name__ == "__main__":
     import time
     
     # Wait up to 30 seconds for pgAdmin to initialize
-    for i in range(30):
+    for _ in range(30):
         if setup_server():
             break
         time.sleep(1)

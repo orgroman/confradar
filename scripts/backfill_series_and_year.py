@@ -106,7 +106,7 @@ def extract_series_acronym_from_key(key: str) -> Optional[str]:
     # - simple 2-digit year in valid DB range (20-35), e.g., "emnlp25" -> "emnlp"
     # Use a backreference for the duplicated 2-digit case, then non-capturing groups for the rest.
     # Note: the 2-digit range mirrors the DB constraint for years 2020-2035
-    clean_key = re.sub(r'((\d{2})\2|20\d{2}|(?:2[0-9]|3[0-5]))$', '', key)
+    clean_key = re.sub(r'(?:(\d{2})\1|20\d{2}|(?:2[0-9]|3[0-5]))$', '', key)
     
     if clean_key:
         return clean_key.lower()

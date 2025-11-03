@@ -78,13 +78,6 @@ class ChairingToolSpider(scrapy.Spider):
             await page.close()
         self.logger.error(f"Request failed: {failure}")
 
-    async def errback_close_page(self, failure):
-        """Close Playwright page on error to avoid resource leaks."""
-        page = failure.request.meta.get("playwright_page")
-        if page:
-            await page.close()
-        self.logger.error(f"Request failed: {failure}")
-
     async def parse(self, response: Response) -> AsyncGenerator[ConferenceItem | Request, None]:
         """Parse ChairingTool conferences page after JavaScript rendering."""
         page = response.meta.get("playwright_page")
@@ -272,8 +265,6 @@ class ChairingToolSpider(scrapy.Spider):
                 # TODO: Use dateparser for more flexible date parsing
                 pass
         
-        return deadlines
-
         return deadlines
 
     def _extract_year(self, conf, name: str) -> int | None:
