@@ -350,6 +350,19 @@ Settings loaded via Pydantic:
 
 ## Monitoring & Observability
 
+### Structured Logging (Current)
+
+ConfRadar includes a comprehensive structured logging infrastructure:
+
+- **Structured JSON Logging**: Machine-readable logs for production environments
+- **Console Logging**: Human-readable logs for development
+- **Configurable**: Control log level and format via environment variables (LOG_LEVEL, LOG_FORMAT)
+- **Contextual Information**: Automatic inclusion of timestamps, levels, module names, functions, and line numbers
+- **Context Injection**: Add custom fields (request IDs, trace IDs, etc.) to log records
+- **Integration**: Works seamlessly with Dagster's logging system
+
+See [Logging Documentation](../docs/LOGGING.md) for detailed usage examples and best practices.
+
 ### Dagster UI (Current)
 
 - **Asset Lineage**: Visual graph of dependencies
@@ -359,8 +372,9 @@ Settings loaded via Pydantic:
 
 ### Future Enhancements
 
+- **Log Aggregation**: Integration with centralized logging (ELK, CloudWatch, etc.)
 - **Prometheus Metrics**: Scrape success rate, latency, DB growth
-- **Error Alerting**: Email/Slack on pipeline failures
+- **Error Alerting**: Email/Slack on pipeline failures (sensors already configured)
 - **Data Quality Checks**: Dagster asset checks for anomalies
 - **Cost Tracking**: LLM API usage and cost per run
 

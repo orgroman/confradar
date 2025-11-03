@@ -220,3 +220,61 @@ uv run dagster asset materialize --select '*'
 # Materialize specific asset
 uv run dagster asset materialize --select 'ai_deadlines_conferences'
 ```
+
+## Logging
+
+ConfRadar uses structured logging infrastructure for consistent, machine-readable logs.
+
+### Configuration
+
+Set logging via environment variables in `.env`:
+
+```bash
+# Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+LOG_LEVEL=INFO
+
+# Format: 'console' (human-readable) or 'json' (structured)
+LOG_FORMAT=console
+```
+
+### Usage in Code
+
+```python
+from confradar import get_logger
+
+logger = get_logger(__name__)
+
+# Log at different levels
+logger.info("Processing started")
+logger.warning("Missing data")
+logger.error("Operation failed", exc_info=True)
+
+# Add structured fields
+logger.info(
+    "Conference saved",
+    extra={"conf_key": "icml-2025", "source": "ai-deadlines"}
+)
+```
+
+### Console Output (Development)
+
+```
+2025-11-02 14:30:45 - confradar.scrapers.ai_deadlines - INFO - Processing started
+```
+
+### JSON Output (Production)
+
+```json
+{
+  "timestamp": "2025-11-02 14:30:45",
+  "level": "INFO",
+  "logger": "confradar.scrapers.ai_deadlines",
+  "message": "Processing started",
+  "module": "ai_deadlines",
+  "function": "parse",
+  "line": 42
+}
+```
+
+See [Logging Documentation](../docs/LOGGING.md) for complete guide including context injection, best practices, and Dagster integration.
+```

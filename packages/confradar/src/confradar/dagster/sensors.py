@@ -3,15 +3,15 @@
 This module defines sensors that monitor pipeline runs and trigger alerts on failures.
 """
 
-import logging
-
 from dagster import (
     DefaultSensorStatus,
     RunFailureSensorContext,
     run_failure_sensor,
 )
 
-logger = logging.getLogger(__name__)
+from confradar.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 @run_failure_sensor(
