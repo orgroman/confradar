@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from confradar.data import MAJOR_SERIES
 from confradar.db import Base, Conference, ConferenceSeries
 
 
@@ -116,27 +117,46 @@ def test_event_date_ordering_constraint_null_dates(tmp_path):
         assert session.query(Conference).filter_by(key="test_conf_no_dates").one()
 
 
-def test_seed_conference_series_creates_new_series(tmp_path):
-    """Test that seeding creates new conference series."""
-    # Define test series data inline to avoid import issues
-    test_series = [
-        ("NeurIPS", "Conference on Neural Information Processing Systems", "https://neurips.cc"),
-        ("ICML", "International Conference on Machine Learning", "https://icml.cc"),
-        ("ICLR", "International Conference on Learning Representations", "https://iclr.cc"),
-        ("ACL", "Annual Meeting of the Association for Computational Linguistics", "https://aclweb.org"),
-        ("EMNLP", "Conference on Empirical Methods in Natural Language Processing", "https://aclweb.org"),
-        ("NAACL", "North American Chapter of the Association for Computational Linguistics", "https://aclweb.org"),
-        ("COLING", "International Conference on Computational Linguistics", "https://www.aclweb.org/anthology/venues/coling/"),
-        ("EACL", "European Chapter of the Association for Computational Linguistics", "https://aclweb.org"),
-    ]
-    
+@pytest.mark.parametrize("start_date,end_date,description", [
+    (date(2025, 1, 1), date(2025, 1, 1), "same day"),
+    (date(2020, 1, 1), date(2020, 1, 7), "year 2020 boundary"),
+    (date(2035, 12, 25), date(2035, 12, 31), "year 2035 boundary"),
+    (date(2025, 6, 1), date(2025, 6, 30), "multi-day conference"),
+])
+def test_event_date_ordering_boundary_cases(tmp_path, start_date, end_date, description):
+    """Test various boundary cases for valid date ranges."""
     engine = create_engine(f"sqlite:///{tmp_path/'test.db'}", future=True)
     Base.metadata.create_all(engine)
 
     with Session(engine) as session:
-        # Create series
+        conf = Conference(
+            key=f"test_conf_{description.replace(' ', '_')}",
+            name=f"Test Conference: {description}",
+            event_start_date=start_date,
+            event_end_date=end_date,
+            year=start_date.year,
+        )
+        session.add(conf)
+        session.commit()
+
+    # Verify conference was saved
+    with Session(engine) as session:
+        saved_conf = session.query(Conference).filter_by(
+            key=f"test_conf_{description.replace(' ', '_')}"
+        ).one()
+        assert saved_conf.event_start_date == start_date
+        assert saved_conf.event_end_date == end_date
+
+
+def test_seed_conference_series_creates_new_series(tmp_path):
+    """Test that seeding creates new conference series using canonical data."""
+    engine = create_engine(f"sqlite:///{tmp_path/'test.db'}", future=True)
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        # Create series using the canonical MAJOR_SERIES data
         series_map = {}
-        for short_name, name, homepage in test_series:
+        for short_name, name, homepage in MAJOR_SERIES:
             series = ConferenceSeries(
                 short_name=short_name,
                 name=name,
@@ -148,17 +168,11 @@ def test_seed_conference_series_creates_new_series(tmp_path):
         session.commit()
 
         # Verify all major series were created
-        assert len(series_map) == 8  # NeurIPS, ICML, ICLR, ACL, EMNLP, NAACL, COLING, EACL
-        assert "NeurIPS" in series_map
-        assert "ICML" in series_map
-        assert "ICLR" in series_map
-        assert "ACL" in series_map
-        assert "EMNLP" in series_map
-        assert "NAACL" in series_map
-        assert "COLING" in series_map
-        assert "EACL" in series_map
+        assert len(series_map) == len(MAJOR_SERIES)
+        for short_name, _, _ in MAJOR_SERIES:
+            assert short_name in series_map
 
-    # Verify series exist in database
+    # Verify series exist in database with correct data
     with Session(engine) as session:
         neurips = session.query(ConferenceSeries).filter_by(short_name="NeurIPS").one()
         assert neurips.name == "Conference on Neural Information Processing Systems"
@@ -175,10 +189,8 @@ def test_seed_conference_series_creates_new_series(tmp_path):
 
 def test_seed_conference_series_idempotency(tmp_path):
     """Test that running seed script multiple times is idempotent."""
-    test_series = [
-        ("NeurIPS", "Conference on Neural Information Processing Systems", "https://neurips.cc"),
-        ("ICML", "International Conference on Machine Learning", "https://icml.cc"),
-    ]
+    # Use a subset of MAJOR_SERIES for faster testing
+    test_series = MAJOR_SERIES[:2]  # Just NeurIPS and ICML
     
     engine = create_engine(f"sqlite:///{tmp_path/'test.db'}", future=True)
     Base.metadata.create_all(engine)
@@ -248,3 +260,34 @@ def test_seed_conference_series_dry_run(tmp_path):
         # Verify it can be queried
         test_series = session.query(ConferenceSeries).filter_by(short_name="TEST").one()
         assert test_series.name == "Test Conference"
+
+
+def test_conference_series_unique_constraint(tmp_path):
+    """Test that duplicate short_name violates unique constraint."""
+    engine = create_engine(f"sqlite:///{tmp_path/'test.db'}", future=True)
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        # Create first series
+        series1 = ConferenceSeries(
+            short_name="ICML",
+            name="International Conference on Machine Learning",
+            homepage="https://icml.cc"
+        )
+        session.add(series1)
+        session.commit()
+
+        # Try to create duplicate with same short_name (should fail)
+        series2 = ConferenceSeries(
+            short_name="ICML",  # Duplicate short_name
+            name="Different Name",
+            homepage="https://different.com"
+        )
+        session.add(series2)
+
+        with pytest.raises(IntegrityError) as exc_info:
+            session.commit()
+
+        # Verify the error is related to the unique constraint
+        assert "uq_series_short_name" in str(exc_info.value).lower() or \
+               "unique constraint" in str(exc_info.value).lower()

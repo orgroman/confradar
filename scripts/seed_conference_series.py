@@ -12,26 +12,15 @@ The script can be run standalone or imported as a module for use in other script
 from __future__ import annotations
 
 import argparse
+import sys
 from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from confradar.data import MAJOR_SERIES
 from confradar.db import ConferenceSeries
 from confradar.db.base import get_engine
-
-
-# Major conference series to seed with (short_name, full_name, homepage)
-MAJOR_SERIES = [
-    ("NeurIPS", "Conference on Neural Information Processing Systems", "https://neurips.cc"),
-    ("ICML", "International Conference on Machine Learning", "https://icml.cc"),
-    ("ICLR", "International Conference on Learning Representations", "https://iclr.cc"),
-    ("ACL", "Annual Meeting of the Association for Computational Linguistics", "https://aclweb.org"),
-    ("EMNLP", "Conference on Empirical Methods in Natural Language Processing", "https://aclweb.org"),
-    ("NAACL", "North American Chapter of the Association for Computational Linguistics", "https://aclweb.org"),
-    ("COLING", "International Conference on Computational Linguistics", "https://www.aclweb.org/anthology/venues/coling/"),
-    ("EACL", "European Chapter of the Association for Computational Linguistics", "https://aclweb.org"),
-]
 
 
 def seed_conference_series(session: Session, dry_run: bool = False) -> dict[str, int]:
@@ -45,41 +34,50 @@ def seed_conference_series(session: Session, dry_run: bool = False) -> dict[str,
         
     Returns:
         Dictionary mapping short_name to series id
+        
+    Raises:
+        Exception: If database operation fails
     """
     series_map = {}
     created_count = 0
     skipped_count = 0
     
-    for short_name, name, homepage in MAJOR_SERIES:
-        # Check if series already exists
-        existing = session.execute(
-            select(ConferenceSeries).where(ConferenceSeries.short_name == short_name)
-        ).scalar_one_or_none()
-        
-        if existing:
-            series_map[short_name] = existing.id
-            print(f"✓ Series already exists: {short_name} (id={existing.id})")
-            skipped_count += 1
-        else:
-            if dry_run:
-                print(f"[DRY RUN] Would create series: {short_name} - {name}")
-                print(f"           Homepage: {homepage}")
-                series_map[short_name] = -1  # Placeholder for dry run
-                created_count += 1
+    try:
+        for short_name, name, homepage in MAJOR_SERIES:
+            # Check if series already exists
+            existing = session.execute(
+                select(ConferenceSeries).where(ConferenceSeries.short_name == short_name)
+            ).scalar_one_or_none()
+            
+            if existing:
+                series_map[short_name] = existing.id
+                print(f"✓ Series already exists: {short_name} (id={existing.id})")
+                skipped_count += 1
             else:
-                series = ConferenceSeries(
-                    short_name=short_name,
-                    name=name,
-                    homepage=homepage
-                )
-                session.add(series)
-                session.flush()  # Get the ID
-                series_map[short_name] = series.id
-                print(f"✓ Created series: {short_name} (id={series.id})")
-                created_count += 1
-    
-    if not dry_run:
-        session.commit()
+                if dry_run:
+                    print(f"[DRY RUN] Would create series: {short_name} - {name}")
+                    print(f"           Homepage: {homepage}")
+                    series_map[short_name] = -1  # Placeholder for dry run
+                    created_count += 1
+                else:
+                    series = ConferenceSeries(
+                        short_name=short_name,
+                        name=name,
+                        homepage=homepage
+                    )
+                    session.add(series)
+                    session.flush()  # Get the ID
+                    series_map[short_name] = series.id
+                    print(f"✓ Created series: {short_name} (id={series.id})")
+                    created_count += 1
+        
+        if not dry_run:
+            session.commit()
+            
+    except Exception as e:
+        if not dry_run:
+            session.rollback()
+        raise RuntimeError(f"Failed to seed conference series: {e}") from e
     
     print(f"\n{'[DRY RUN] ' if dry_run else ''}Summary:")
     print(f"  Total series in seed list: {len(MAJOR_SERIES)}")
@@ -101,13 +99,19 @@ def main():
     )
     args = parser.parse_args()
     
-    engine = get_engine()
-    
-    with Session(engine) as session:
-        print("Seeding conference_series table with major conferences...")
-        seed_conference_series(session, dry_run=args.dry_run)
-    
-    print(f"\n{'[DRY RUN] ' if args.dry_run else ''}✓ Seeding complete!")
+    try:
+        engine = get_engine()
+        
+        with Session(engine) as session:
+            print("Seeding conference_series table with major conferences...")
+            seed_conference_series(session, dry_run=args.dry_run)
+        
+        print(f"\n{'[DRY RUN] ' if args.dry_run else ''}✓ Seeding complete!")
+        sys.exit(0)
+        
+    except Exception as e:
+        print(f"\n✗ Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

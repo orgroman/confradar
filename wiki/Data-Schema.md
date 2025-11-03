@@ -496,6 +496,49 @@ Changes:
 
 Rationale: Enforce data integrity for conference event dates, preventing invalid date ranges where the end date occurs before the start date.
 
+### Migration Safety
+
+The migration includes a preflight check that verifies no existing rows violate the constraint before applying it. If invalid data is detected, the migration will fail with a clear error message.
+
+**Preflight Check (before running migration):**
+```sql
+-- Check for conferences with invalid date ranges
+SELECT id, key, event_start_date, event_end_date 
+FROM conferences
+WHERE event_start_date IS NOT NULL 
+  AND event_end_date IS NOT NULL 
+  AND event_end_date < event_start_date;
+```
+
+**Remediation (if invalid rows found):**
+- Review each invalid row and determine the correct dates
+- Update rows manually before running the migration:
+  ```sql
+  UPDATE conferences 
+  SET event_start_date = '2025-07-01', event_end_date = '2025-07-05'
+  WHERE id = <conference_id>;
+  ```
+- Or set dates to NULL if unsure:
+  ```sql
+  UPDATE conferences 
+  SET event_start_date = NULL, event_end_date = NULL
+  WHERE id = <conference_id>;
+  ```
+
+**Running the migration:**
+```bash
+# From repository root
+alembic upgrade head
+```
+
+**Rollback (if needed):**
+```bash
+# Downgrade drops the constraint but does NOT fix data
+alembic downgrade -1
+```
+
+Note: The downgrade only removes the constraint; it does not modify conference dates. If you need to rollback, ensure you have a backup or are prepared to manually correct any data issues.
+
 ## Data Backfill (v2)
 
 Date: 2025-11-02  
@@ -542,7 +585,8 @@ The script is idempotent and safe to re-run:
 ## Conference Series Seeding
 
 Date: 2025-11-02  
-Script: `scripts/seed_conference_series.py`
+Script: `scripts/seed_conference_series.py`  
+Canonical Data: `packages/confradar/src/confradar/data/series_seed.py`
 
 ### Purpose
 Seed the `conference_series` table with major academic conference series in machine learning, NLP, and related fields. This provides canonical names and homepages for well-known conferences.
@@ -559,22 +603,86 @@ The script seeds 8 major conference series:
 - **EACL**: European Chapter of the Association for Computational Linguistics
 
 Each series includes:
-- `short_name`: Acronym (e.g., "NeurIPS", "ACL")
+- `short_name`: Acronym (e.g., "NeurIPS", "ACL") - **enforced unique by database constraint**
 - `name`: Full canonical name
 - `homepage`: Official website URL
 
+### Data Source
+The canonical list of series is maintained in `packages/confradar/src/confradar/data/series_seed.py`. Both the seed script and tests import from this single source of truth to prevent drift.
+
 ### Usage
 
+**Dry run (recommended first):**
 ```bash
-# Dry run (preview changes)
 python scripts/seed_conference_series.py --dry-run
+```
 
-# Apply changes
+Expected output:
+```
+Seeding conference_series table with major conferences...
+[DRY RUN] Would create series: NeurIPS - Conference on Neural Information Processing Systems
+           Homepage: https://neurips.cc
+[DRY RUN] Would create series: ICML - International Conference on Machine Learning
+           Homepage: https://icml.cc
+...
+
+[DRY RUN] Summary:
+  Total series in seed list: 8
+  Series created: 8
+  Series already existed: 0
+
+[DRY RUN] ✓ Seeding complete!
+```
+
+**Apply seeding:**
+```bash
 python scripts/seed_conference_series.py
 ```
 
-### Idempotency
+Expected output when series already exist:
+```
+Seeding conference_series table with major conferences...
+✓ Series already exists: NeurIPS (id=1)
+✓ Series already exists: ICML (id=2)
+...
+
+Summary:
+  Total series in seed list: 8
+  Series created: 0
+  Series already existed: 8
+
+✓ Seeding complete!
+```
+
+### Idempotency & Safety
 The script is idempotent and safe to run multiple times:
-- Checks if each series already exists before creating
-- Skips existing series and reports them
-- Only creates new series that don't yet exist in the database
+- **Checks before creating**: Queries for existing series by `short_name` before inserting
+- **Database-level uniqueness**: The `uq_series_short_name` constraint prevents duplicate inserts even if multiple processes run the seeder
+- **Transaction safety**: Uses explicit transaction with commit/rollback on error
+- **Exit codes**: Returns exit code 0 on success, 1 on failure
+- **Error handling**: Rolls back transaction and reports errors clearly
+
+### Error Conditions
+
+**If seeding fails:**
+```
+✗ Error: Failed to seed conference series: <error message>
+```
+Exit code: 1
+
+Common causes:
+- Database connection failure
+- Permission issues
+- Network connectivity (if database is remote)
+
+### Integration
+To seed series as part of database initialization:
+```python
+from confradar.db.base import get_engine
+from sqlalchemy.orm import Session
+from scripts.seed_conference_series import seed_conference_series
+
+engine = get_engine()
+with Session(engine) as session:
+    seed_conference_series(session, dry_run=False)
+```
