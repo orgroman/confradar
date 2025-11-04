@@ -13,7 +13,7 @@ Get started in seconds with zero local setup:
 3. Configure your OpenAI API key in Codespace secrets
 4. All services start automatically
 
-**→ [Full Codespaces Setup Guide](../docs/CODESPACES_SETUP.md)**
+**→ [Full Codespaces Setup Guide](Codespaces-Setup)**
 
 **Perfect for:**
 - New contributors

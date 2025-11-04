@@ -276,7 +276,7 @@ GitHub provides free Codespaces usage:
 
 ## Local Development Alternative
 
-Prefer working locally? See our [Development Guide](../wiki/Development-Guide.md) for local setup instructions.
+Prefer working locally? See our [Development Guide](Development-Guide) for local setup instructions.
 
 ## Advanced Configuration
 

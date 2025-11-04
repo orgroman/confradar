@@ -8,7 +8,7 @@
       "MaintenanceDB": "confradar",
       "Username": "confradar",
       "SSLMode": "prefer",
-      "PassFile": "/var/lib/pgadmin/storage/pgpass"
+      "PassFile": "/var/lib/pgadmin/storage/confradar/pgpass"
     }
   }
 }
