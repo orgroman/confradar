@@ -11,7 +11,7 @@ def test_dagster_definitions_load():
     assert defs is not None
     # Check that we have assets defined
     assert hasattr(defs, "assets")
-    assert len(defs.assets) == 7  # 6 scrapers (incl. seeded) + 1 storage
+    assert len(defs.assets) == 6  # 5 scrapers (incl. seeded) + 1 storage
     # Check that we have asset checks defined
     assert hasattr(defs, "asset_checks")
     assert len(defs.asset_checks) == 4  # 4 data quality checks
@@ -33,7 +33,6 @@ def test_asset_names():
     # Check scraper assets
     assert "ai_deadlines_conferences" in asset_names
     assert "acl_web_conferences" in asset_names
-    assert "chairing_tool_conferences" in asset_names
     assert "elra_conferences" in asset_names
     assert "wikicfp_conferences" in asset_names
     assert "seeded_conferences" in asset_names

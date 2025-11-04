@@ -18,7 +18,6 @@ import pytest
 
 from confradar.scrapers.spiders.acl_web import ACLWebSpider
 from confradar.scrapers.spiders.ai_deadlines import AIDeadlinesSpider
-from confradar.scrapers.spiders.chairing_tool import ChairingToolSpider
 from confradar.scrapers.spiders.elra import ELRASpider
 from confradar.scrapers.spiders.wikicfp import WikiCFPSpider
 
@@ -147,25 +146,6 @@ def test_acl_web_spider_real():
 
 
 @pytest.mark.integration
-def test_chairing_tool_spider_real():
-    """Test ChairingToolSpider against real website."""
-    items = run_spider_and_collect(ChairingToolSpider)
-
-    assert len(items) >= 0, "Should run without errors"
-    print(f"\n✓ Scraped {len(items)} conferences from ChairingTool")
-
-    if items:
-        item = items[0]
-        assert "key" in item
-        assert "name" in item
-        assert "source" in item
-        assert item["source"] == "chairing_tool"
-        print(f"  Sample: {item['name']} ({item['key']})")
-    else:
-        print("  (No items found - site structure may have changed)")
-
-
-@pytest.mark.integration
 def test_elra_spider_real():
     """Test ELRASpider against real website."""
     items = run_spider_and_collect(ELRASpider)
@@ -210,7 +190,6 @@ def test_all_spiders_summary():
     spiders = [
         (AIDeadlinesSpider, "AI Deadlines (NLP)"),
         (ACLWebSpider, "ACL Web"),
-        (ChairingToolSpider, "ChairingTool"),
         (ELRASpider, "ELRA"),
         (WikiCFPSpider, "WikiCFP"),
     ]
