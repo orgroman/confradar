@@ -120,7 +120,9 @@ class ChairingToolSpider(scrapy.Spider):
             for selector in selectors_to_try:
                 conferences = rendered_response.css(selector)
                 if conferences:
-                    self.logger.info(f"Found {len(conferences)} conferences using selector: {selector}")
+                    self.logger.info(
+                        f"Found {len(conferences)} conferences using selector: {selector}"
+                    )
                     conferences_found = conferences
                     break
             
@@ -128,7 +130,9 @@ class ChairingToolSpider(scrapy.Spider):
                 # Log the page structure to help debug
                 self.logger.warning("No conferences found with known selectors")
                 self.logger.debug(f"Page title: {rendered_response.css('title::text').get()}")
-                self.logger.debug(f"Body classes: {rendered_response.css('body::attr(class)').get()}")
+                self.logger.debug(
+                    f"Body classes: {rendered_response.css('body::attr(class)').get()}"
+                )
                 
                 # Save HTML for manual inspection (only if debug logging enabled)
                 if self.settings.get("LOG_LEVEL") == "DEBUG":
