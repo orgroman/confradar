@@ -82,6 +82,10 @@ class ChairingToolSpider(scrapy.Spider):
         """Parse ChairingTool conferences page after JavaScript rendering."""
         page = response.meta.get("playwright_page")
         
+        if not page:
+            self.logger.error("Playwright page not available in response meta")
+            return
+        
         try:
             self.logger.info(f"Parsing {response.url} with Playwright")
             
