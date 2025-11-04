@@ -1,5 +1,8 @@
 # GitHub Codespaces Setup Guide
 
+> **Note:** This is a copy of the [wiki Codespaces Setup page](../wiki/Codespaces-Setup.md) for easier access in the repository.  
+> The wiki version is the source of truth and should be updated first. This file is kept in sync for convenience.
+
 Get started with ConfRadar development in seconds using GitHub Codespaces—no local setup required!
 
 ## Quick Start

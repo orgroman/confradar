@@ -47,8 +47,7 @@ class ChairingToolSpider(scrapy.Spider):
         "ITEM_PIPELINES": {
             "confradar.scrapers.pipelines.ValidationPipeline": 100,
             "confradar.scrapers.pipelines.DeduplicationPipeline": 200,
-            # DatabasePipeline disabled for testing without DB
-            # "confradar.scrapers.pipelines.DatabasePipeline": 300,
+            "confradar.scrapers.pipelines.DatabasePipeline": 300,
         },
     }
 
@@ -131,10 +130,13 @@ class ChairingToolSpider(scrapy.Spider):
                 self.logger.debug(f"Page title: {rendered_response.css('title::text').get()}")
                 self.logger.debug(f"Body classes: {rendered_response.css('body::attr(class)').get()}")
                 
-                # Save HTML for manual inspection
-                with open('chairing_tool_rendered.html', 'w', encoding='utf-8') as f:
-                    f.write(content)
-                self.logger.info("Saved rendered HTML to chairing_tool_rendered.html for inspection")
+                # Save HTML for manual inspection (only if debug logging enabled)
+                if self.settings.get('LOG_LEVEL') == 'DEBUG':
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.html', prefix='chairing_tool_', 
+                                                      delete=False, encoding='utf-8') as f:
+                        f.write(content)
+                        self.logger.info(f"Saved rendered HTML to {f.name} for inspection")
             
             for conf in conferences_found:
                 # Extract basic info - adjust selectors based on actual structure

@@ -5,6 +5,9 @@ services:
     command: sleep infinity
     volumes:
       - .:/workspace:cached
+    # Note: network_mode: service:postgres allows workspace to use localhost for postgres,
+    # simplifying DATABASE_URL configuration in Codespaces. The postgres service exposes 
+    # port 5432 to the host, so external access is still available via host:5432.
     network_mode: service:postgres
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://confradar:confradar@postgres:5432/confradar}

@@ -45,8 +45,8 @@ def setup_server():
             return True
         
         # Insert server configuration
-        # Note: user_id (1) and connect_now (1) are hard-coded for default pgAdmin setup.
-        # These values are required for initial configuration and match the default admin user.
+        # Note: user_id=1 refers to the default admin user in pgAdmin, and connect_now=1 enables automatic connection on startup.
+        # These values are hard-coded for initial configuration and are required for the default setup.
         cursor.execute("""
             INSERT INTO server (
                 user_id, servergroup_id, name, host, port, 

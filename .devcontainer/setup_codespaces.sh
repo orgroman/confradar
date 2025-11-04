@@ -33,23 +33,18 @@ else
     print_success "uv already installed"
 fi
 
-# Navigate to workspace root
-cd /workspace
-
 # Set up Python environment
 print_step "Setting up Python environment with uv..."
-cd /workspace/packages/confradar
-if [ ! -d ".venv" ]; then
-    uv venv
+if [ ! -d "/workspace/packages/confradar/.venv" ]; then
+    uv venv --project /workspace/packages/confradar
 fi
-uv sync
+uv sync --project /workspace/packages/confradar
 print_success "Python environment ready"
 
 # Install frontend dependencies
 print_step "Installing frontend dependencies..."
-cd /workspace/web
-if [ ! -d "node_modules" ] || [ -z "$(ls -A node_modules 2>/dev/null)" ]; then
-    npm ci || npm install
+if [ ! -d "/workspace/web/node_modules" ] || [ -z "$(ls -A /workspace/web/node_modules 2>/dev/null)" ]; then
+    npm ci --prefix /workspace/web || npm install --prefix /workspace/web
     print_success "Frontend dependencies installed"
 else
     print_success "Frontend dependencies already installed"
@@ -57,13 +52,12 @@ fi
 
 # Wait for Docker services to be ready
 print_step "Starting Docker services..."
-cd /workspace
-docker compose up -d
+docker compose --project-directory /workspace up -d
 
 print_step "Waiting for PostgreSQL to be ready..."
 timeout=60
 elapsed=0
-until docker compose exec -T postgres pg_isready -U confradar > /dev/null 2>&1; do
+until docker compose --project-directory /workspace exec -T postgres pg_isready -U confradar > /dev/null 2>&1; do
     if [ $elapsed -ge $timeout ]; then
         print_warning "PostgreSQL did not start within ${timeout}s. You may need to restart services manually."
         break
@@ -78,8 +72,7 @@ if [ $elapsed -lt $timeout ]; then
     
     # Run database migrations
     print_step "Running database migrations..."
-    cd /workspace
-    uv run --project packages/confradar alembic upgrade head
+    uv run --project /workspace/packages/confradar alembic upgrade head
     print_success "Database migrations completed"
 else
     print_warning "Skipping database migrations due to PostgreSQL timeout"
