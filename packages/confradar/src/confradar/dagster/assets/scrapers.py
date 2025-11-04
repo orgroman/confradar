@@ -12,7 +12,6 @@ from scrapy.utils.project import get_project_settings
 
 from confradar.scrapers.spiders.acl_web import ACLWebSpider
 from confradar.scrapers.spiders.ai_deadlines import AIDeadlinesSpider
-from confradar.scrapers.spiders.chairing_tool import ChairingToolSpider
 from confradar.scrapers.spiders.elra import ELRASpider
 from confradar.scrapers.spiders.seeded import SeededSpider
 from confradar.scrapers.spiders.wikicfp import WikiCFPSpider
@@ -96,28 +95,6 @@ def acl_web_conferences() -> Output[list[dict[str, Any]]]:
         metadata={
             "count": len(items),
             "source": "acl_web",
-            "preview": (
-                MetadataValue.md("\n".join([f"- {item['name']}" for item in items[:5]]))
-                if items
-                else "No items scraped"
-            ),
-        },
-    )
-
-
-@asset(
-    description="Scrape conferences from ChairingTool",
-    group_name="scrapers",
-)
-def chairing_tool_conferences() -> Output[list[dict[str, Any]]]:
-    """Scrape conferences from ChairingTool platform."""
-    items = run_spider(ChairingToolSpider)
-
-    return Output(
-        value=items,
-        metadata={
-            "count": len(items),
-            "source": "chairing_tool",
             "preview": (
                 MetadataValue.md("\n".join([f"- {item['name']}" for item in items[:5]]))
                 if items

@@ -1,6 +1,25 @@
 # Getting Started
 
-This guide helps you set up the ConfRadar development environment using uv, Docker, and Dagster.
+This guide helps you set up the ConfRadar development environment.
+
+## Quick Start Options
+
+### Option 1: GitHub Codespaces (Recommended for Quick Start)
+
+The fastest way to get started—no local setup required!
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/orgroman/confradar?quickstart=1)
+
+1. Click the badge above or go to the repository
+2. Wait 3-5 minutes for automatic setup
+3. All services start automatically (PostgreSQL, Dagster, LiteLLM, pgAdmin)
+4. Configure your API key from Azure Key Vault in Codespace secrets
+
+**→ [Full Codespaces Setup Guide](Codespaces-Setup)**
+
+### Option 2: Local Development
+
+Traditional local setup with full control:
 
 ## Prerequisites
 

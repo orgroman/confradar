@@ -155,6 +155,23 @@ async def _bulk_resolve_threads(
     pull_number: int,
     thread_ids: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
+    """
+    Resolve multiple review threads for a pull request.
+
+    Args:
+        gh: GitHubGraphQLClient instance.
+        owner: Repository owner.
+        repo: Repository name.
+        pull_number: Pull request number.
+        thread_ids: List of thread IDs to resolve. If None, all unresolved threads will be resolved.
+            If an empty list is provided, zero threads will be resolved (no action).
+
+    Returns:
+        Dict with keys:
+            - resolved_count: Number of threads successfully resolved.
+            - resolved_ids: List of thread IDs that were resolved.
+            - failed: List of dicts with thread_id and error for failures.
+    """
     if thread_ids is None:
         threads = await _list_review_threads(gh, owner, repo, pull_number, resolved=False)
         thread_ids = [t["id"] for t in threads]

@@ -27,7 +27,6 @@ dependencies = [
   "SQLAlchemy>=2.0",
   "psycopg2-binary>=2.9",
   "scrapy>=2.11",
-  "playwright>=1.40",
   "dagster>=1.12",
   "dagster-webserver>=1.12",
   "dagster-postgres>=0.24",

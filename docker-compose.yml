@@ -1,4 +1,20 @@
 services:
+  workspace:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu
+    container_name: confradar-workspace
+    command: sleep infinity
+    volumes:
+      - .:/workspace:cached
+    # Note: network_mode: service:postgres allows workspace to use localhost for postgres,
+    # simplifying DATABASE_URL configuration in Codespaces. The postgres service exposes 
+    # port 5432 to the host, so external access is still available via host:5432.
+    network_mode: service:postgres
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg2://confradar:confradar@postgres:5432/confradar}
+      DAGSTER_HOME: /workspace/packages/confradar/dagster_home
+      CONFRADAR_SA_OPENAI: ${CONFRADAR_SA_OPENAI:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+
   postgres:
     image: postgres:16-alpine
     container_name: confradar-postgres
@@ -27,6 +43,8 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      # Set the default server password in environment
+      PGADMIN_DEFAULT_SERVER_PASSWORD: ${POSTGRES_PASSWORD:-confradar}
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro

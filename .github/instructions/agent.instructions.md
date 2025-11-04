@@ -17,6 +17,7 @@ Every PR created or updated by the agent must include:
 - Whether any API behavior or ingestion behavior changed.
 - Whether any UI under `web/**` was modified using Vercel v0 MCP.
 - A note if this PR is addressing any automated review feedback (for example, from the Vercel review agent) and which comments were resolved.
+- Always check if there are new unresolved review comments before considering the PR “ready to merge.”
 
 ## Safety and Scope
 - The agent must not delete files that are unrelated to the described task.
@@ -35,9 +36,9 @@ When work is delegated to the Copilot Agent (via the **GitHub MCP server’s `as
 **Agent responsibilities**
 - When starting work on an issue, the agent must either:
   - link the new branch and PR back in the original issue, or
-  - update the issue body with “In progress: <branch name> / <PR #>”.
-- When it pushes follow-up commits in response to review (including Vercel review agent comments for frontend code), it must update the PR description with a short “Status” section describing what was addressed.
-- When it considers a task “done,” it must explicitly request review on the PR and mark the parent issue as “Pending review.”
+  - update the issue body with "In progress: [branch name] / [PR number]".
+- When it pushes follow-up commits in response to review (including Vercel review agent comments for frontend code), it must update the PR description with a short "Status" section describing what was addressed.
+- When it considers a task "done," it must explicitly request review on the PR and mark the parent issue as "Pending review."
 - After review approval and passing checks, the agent **should merge the PR** and close or comment on the corresponding issue.
 
 **Human responsibilities**
