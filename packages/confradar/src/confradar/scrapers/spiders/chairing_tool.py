@@ -131,10 +131,16 @@ class ChairingToolSpider(scrapy.Spider):
                 self.logger.debug(f"Body classes: {rendered_response.css('body::attr(class)').get()}")
                 
                 # Save HTML for manual inspection (only if debug logging enabled)
-                if self.settings.get('LOG_LEVEL') == 'DEBUG':
+                if self.settings.get("LOG_LEVEL") == "DEBUG":
                     import tempfile
-                    with tempfile.NamedTemporaryFile(mode='w', suffix='.html', prefix='chairing_tool_', 
-                                                      delete=False, encoding='utf-8') as f:
+
+                    with tempfile.NamedTemporaryFile(
+                        mode="w",
+                        suffix=".html",
+                        prefix="chairing_tool_",
+                        delete=False,
+                        encoding="utf-8",
+                    ) as f:
                         f.write(content)
                         self.logger.info(f"Saved rendered HTML to {f.name} for inspection")
             

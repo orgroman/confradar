@@ -44,7 +44,7 @@
         "ms-vscode.makefile-tools"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
+        "python.defaultInterpreterPath": "/workspace/packages/confradar/.venv/bin/python",
         "python.terminal.activateEnvironment": true,
         "python.linting.enabled": true,
         "python.linting.ruffEnabled": true,
